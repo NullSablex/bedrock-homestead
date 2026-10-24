@@ -1,0 +1,27 @@
+name: Translation
+description: Offer a new language, or fix an existing one
+labels: [translation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A pull request is welcome and faster - see the
+        [Languages guide](https://nullsablex.github.io/bedrock-homestead/languages/).
+        Use this form if you would rather not open one.
+
+  - type: input
+    id: language
+    attributes:
+      label: Language code
+      description: Minecraft language code, such as fr_FR or de_DE.
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: Translation
+      description: Paste the whole .lang file, or just the lines to correct.
+      render: text
+    validations:
+      required: true

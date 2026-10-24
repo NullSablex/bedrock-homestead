@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # The add-on itself has no dependencies - it ships the JavaScript the game
+  # runs. What can drift is the CI toolchain, and a stale pinned action is the
+  # most likely source of a broken build here.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+
+  # The docs toolchain is pinned so the site builds the same a year from now.
+  # These updates are proposed, never automatic.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "docs"
+    labels:
+      - dependencies
+      - documentation
+    ignore:
+      # MkDocs 2.0 removes the plugin system and rewrites theming, with no
+      # migration path, and Material for MkDocs does not run on it. A major
+      # bump here would not be an update, it would be a rewrite.
+      - dependency-name: mkdocs
+        update-types: [version-update:semver-major]

@@ -1,0 +1,42 @@
+{
+  "format_version": 2,
+  "metadata": {
+    "authors": ["NullSablex"],
+    "product_type": "addon"
+  },
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "5d2f8b31-9c47-4e60-a3f2-71b4e8c05d19",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 26, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "4b70d066-63ae-4cb8-aa61-73fe5c4ffb8a",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "e17c4a52-3f89-4b21-8d06-92ae5f7c1043",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.9.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.1.0"
+    },
+    {
+      "uuid": "9f4c0d72-1a85-4e39-b6d2-40c7e5138ab6",
+      "version": [1, 0, 0]
+    }
+  ]
+}

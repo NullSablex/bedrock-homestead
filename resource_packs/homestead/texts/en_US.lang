@@ -1,0 +1,248 @@
+## Homestead - source language. Every other file is a translation of this one.
+## A key missing from another file falls back to what is written here.
+##
+## %s carries the arguments the code passes in, in order. The colour codes are
+## part of the string: reword freely, keep the codes and the placeholders.
+
+
+pack.name=§aHomestead §2[§aRP§2]
+pack.description=§fClaim a square of land: only you and the people you trust build, break and open chests inside it.
+
+
+## Chat --------------------------------------------------------------------
+homestead.claim.created=§8[§aHomestead§8] §7Claim §f%s§7 created: §f%s §7to §f%s§7.
+homestead.claim.created.hint=§8[§aHomestead§8] §7Only you and the people you trust build and open chests here.
+homestead.claim.unnamed=Claim at %s
+homestead.claim.default=Claim %s
+homestead.claim.name.empty=§8[§aHomestead§8] §7§cEnter a name for the claim.
+homestead.claim.name.used=§8[§aHomestead§8] §7§cYou already have a claim with that name.
+homestead.claim.name.saved=§8[§aHomestead§8] §7Claim renamed to §f%s§7.
+homestead.limit.count=§8[§aHomestead§8] §7§cYou already hold %s claims (limit %s).
+homestead.limit.small=§8[§aHomestead§8] §7§cThat selection is %s. The smallest claim is %s blocks a side.
+homestead.limit.large=§8[§aHomestead§8] §7§cThat selection is %s. The largest claim is %s blocks a side.
+homestead.limit.budget=§8[§aHomestead§8] §7§cThat claim needs %s blocks and you have %s left of %s.
+homestead.limit.invalid=§8[§aHomestead§8] §7§cThis outline crosses itself or is not a valid shape.
+homestead.overlap.own=§8[§aHomestead§8] §7§cThat area overlaps another one of yours.
+homestead.overlap.other=§8[§aHomestead§8] §7§cThat square is too close to a claim of %s.
+homestead.remove.done=§8[§aHomestead§8] §7Claim removed.
+homestead.trust.already=§8[§aHomestead§8] §7%s is already trusted.
+homestead.trust.added=§8[§aHomestead§8] §7§f%s§7 can now build there.
+homestead.trust.notified=§8[§aHomestead§8] §7%s trusted you in their claim.
+homestead.untrust.absent=§8[§aHomestead§8] §7%s was not trusted.
+homestead.untrust.done=§8[§aHomestead§8] §7§f%s§7 can no longer build there.
+homestead.deed.received=§8[§aHomestead§8] §7You received the deed. Use it to open the claim menu.
+homestead.storage.failed=§8[§aHomestead§8] §7§cCould not save. No change was confirmed; check the content log.
+homestead.manage.denied=§8[§aHomestead§8] §7§cYou no longer have permission to manage this claim.
+
+## Protection --------------------------------------------------------------
+homestead.deny.break=§8[§aHomestead§8] §7You cannot break here §7- claim of §f%s§7.
+homestead.deny.place=§8[§aHomestead§8] §7You cannot build here §7- claim of §f%s§7.
+homestead.deny.use=§8[§aHomestead§8] §7You cannot use that here §7- claim of §f%s§7.
+homestead.deny.container=§8[§aHomestead§8] §7You cannot open that §7- claim of §f%s§7.
+homestead.deny.door=§8[§aHomestead§8] §7You cannot work that door §7- claim of §f%s§7.
+homestead.deny.mechanism=§8[§aHomestead§8] §7You cannot work that §7- claim of §f%s§7.
+homestead.deny.bed=§8[§aHomestead§8] §7That bed is not yours to use §7- claim of §f%s§7.
+homestead.deny.enter=§8[§aHomestead§8] §7§cYou are not allowed inside this claim.
+
+## Permissions -------------------------------------------------------------
+homestead.rules.saved=§8[§aHomestead§8] §7§aRules saved.
+homestead.rules.saved.for=§8[§aHomestead§8] §7§aRules saved for §f%s§a.
+homestead.ui.rules.title=What anyone may do
+homestead.ui.rules.save=Save
+homestead.ui.perm.enter=Come inside
+homestead.ui.perm.doors=Doors, gates, buttons and levers
+homestead.ui.perm.containers=Chests and anything that stores
+homestead.ui.perm.use=Beds, furnaces and other working blocks
+homestead.ui.perm.place=Place blocks
+homestead.ui.perm.break=Break blocks
+homestead.ui.member.body=What §f%s§r may do here, and where each answer comes from.
+homestead.ui.member.edit=Change what they may do
+homestead.ui.member.reset=Clear exceptions
+
+## Selection ---------------------------------------------------------------
+homestead.select.first=§8[§aHomestead§8] §7Corner marked. Click the opposite corner to finish the shape.
+homestead.select.second=§8[§aHomestead§8] §7Both corners marked.
+homestead.select.cleared=§8[§aHomestead§8] §7Markers cleared.
+homestead.select.nomarker=§8[§aHomestead§8] §7§eNo marker block could be placed there, so the point was not added.
+homestead.select.point=§8[§aHomestead§8] §7Point %s marked.
+homestead.select.full=§8[§aHomestead§8] §7§cThat is the most points one shape can have (%s).
+homestead.select.closed=§8[§aHomestead§8] §7Path closed: %s walls. Open the wand to claim it.
+homestead.select.snapped=§8[§aHomestead§8] §7§7Aligned to the wall: a wall runs straight or exactly diagonal.
+homestead.select.tooclose=§8[§aHomestead§8] §7§cThat is where the last point already is.
+homestead.select.turned=§8[§aHomestead§8] §7§7A corner was added to close: the way back had to be a wall too.
+homestead.wand.received=§8[§aHomestead§8] §7Marking wand handed over. Aim at a block to mark a corner; aim at nothing for the controls.
+homestead.wand.stored=§8[§aHomestead§8] §7Your wand was already delivered. Check where you stored it.
+homestead.wand.gone=§8[§aHomestead§8] §7Marking wand put away.
+homestead.ui.wand.start=Mark out an area
+homestead.ui.wand.resume=Back to the marking
+homestead.ui.wand.title=Marking
+homestead.ui.wand.body.none=Aim at a block and mark the first corner.
+homestead.ui.wand.body.short=%s point(s) left.
+homestead.ui.wand.body.open=%s wall(s). Continue or close at the first point.
+homestead.ui.wand.close=Close the path here
+homestead.ui.wand.clear.one=Clear point %s (%s)
+homestead.ui.wand.clear.all=Clear every point
+homestead.ui.wand.putaway=Put the wand away
+homestead.ui.select.second=One corner marked. Click the block at the opposite corner.
+homestead.ui.select.size=§7Marked: §f%s §7(%s blocks)
+homestead.ui.select.cost=§7Costs §f%s §7of the §f%s §7you have left
+homestead.ui.select.confirm=Claim the marked area
+homestead.ui.select.clear=Clear the markers
+
+## Menu --------------------------------------------------------------------
+homestead.ui.title=Homestead
+homestead.ui.back=Back
+homestead.ui.close=Close
+homestead.ui.cancel=Cancel
+homestead.ui.player=Player
+homestead.ui.body.free=You are on §aunclaimed land§r.
+homestead.ui.body.free.size=A one-click claim is %sx%s blocks.
+homestead.ui.body.free.hint=§7Aim at a block and use the deed to mark a corner.
+homestead.ui.body.mine=You are in §a%s§r, one of your claims.
+homestead.ui.body.other=You are in §f%s§r, a claim owned by §f%s§r.
+homestead.ui.build.allowed=Building here: §apermitted
+homestead.ui.build.blocked=Building here: §cblocked
+homestead.ui.claim.here=Claim this spot
+homestead.ui.mine.title=My claims
+homestead.ui.mine.empty=No protected areas.
+homestead.ui.mine.body=You hold %s of %s claims.
+homestead.ui.mine.budget=§7Land used: §f%s §7of §f%s §7blocks
+homestead.ui.mine.summary=%s/%s claims | %s/%s blocks
+homestead.info.bounds=§7Bounds: §f%s §7to §f%s
+homestead.info.size=§7Size: §f%s §7(%s blocks)
+homestead.info.size.short=§7Size: §f%s
+homestead.info.trusted=§7Trusted: §f%s
+homestead.info.trusted.none=§7Trusted: §fnobody
+homestead.ui.manage.title=Manage claim
+homestead.ui.manage.here=Manage this claim
+homestead.ui.claim.rename=Rename claim
+homestead.ui.claim.name=Claim name
+homestead.ui.claim.name.hint=Up to 32 letters and numbers.
+homestead.ui.manage.revoke.hint=§7Trusted here. Tap a name to revoke it.
+homestead.ui.status.title=Status
+homestead.ui.status.ok=§aProtection active
+homestead.ui.status.failed=§cProtection incomplete (%s failures)
+homestead.ui.status.claims=%s claims loaded
+homestead.ui.status.compatible=Stable compatibility mode is active. Experimental features are not required.
+homestead.ui.visitor.header=Test the protection
+homestead.ui.visitor.body.off=Visitor mode: off. Test your claims as another player.
+homestead.ui.visitor.body.on=Visitor mode: on. Your claims treat you as another player.
+homestead.ui.visitor.on=Test as a visitor
+homestead.ui.visitor.off=Stop testing as a visitor
+homestead.ui.visitor.warn=§eYou are being treated as a stranger in your own claims.
+homestead.visitor.on=§8[§aHomestead§8] §7§eVisitor test on: every claim now refuses you, including your own. Open the menu to turn it off.
+homestead.visitor.off=§8[§aHomestead§8] §7§aVisitor test off. Your claims answer to you again.
+homestead.ui.trust.title=Trust a player
+homestead.ui.untrust.title=Revoke access
+homestead.ui.nobody.online=§8[§aHomestead§8] §7§cThere is nobody else online to trust.
+homestead.ui.nobody.trusted=§8[§aHomestead§8] §7§cNobody is trusted in that claim.
+homestead.ui.remove.title=Remove claim
+homestead.ui.remove.body=Delete the claim at %s?
+homestead.ui.remove.warn=§cThe protection ends immediately.
+homestead.ui.remove.yes=Yes, remove it
+homestead.ui.admin.title=Administration
+homestead.ui.admin.empty=Nobody has claimed anything yet.
+homestead.admin.all=§7Claims in this world: §f%s
+homestead.ui.admin.settings=Limits per player
+homestead.ui.admin.maxclaims=Number of claims (%s-%s)
+homestead.ui.admin.blockbudget=Total blocks (%s-%s)
+homestead.admin.settings.invalid=§8[§aHomestead§8] §7§cUse whole numbers within the displayed limits.
+homestead.admin.settings.saved=§8[§aHomestead§8] §7Limits saved: §f%s claims§7 and §f%s blocks§7 per player.
+
+## Credits -----------------------------------------------------------------
+homestead.credits.title=About
+homestead.credits.tagline=Land and access protection.
+homestead.credits.by=§7By
+homestead.credits.version=§7Version
+homestead.credits.license=§7Licence
+homestead.credits.source=§7Source
+homestead.credits.link=Repository
+homestead.credits.disclaimer=Independent project, not affiliated with Mojang or Microsoft.
+
+## Dimensions ---------------------------------------------------------------
+homestead.dimension.overworld=Overworld
+homestead.dimension.nether=Nether
+homestead.dimension.end=The End
+
+## Shape --------------------------------------------------------------------
+homestead.ui.shape.rectangle=§8Two marks are opposite corners. A third turns them into walls.
+homestead.ui.shape.path=§8Walls traced. Come back to the first point to close it.
+homestead.select.became.path=§8[§aHomestead§8] §7Third point: the marks are walls now. Close the path when it is done.
+homestead.select.straightened=§8[§aHomestead§8] §7Point 2 moved onto the wall: a wall runs straight or exactly diagonal.
+homestead.select.marker.protected=§8[§aHomestead§8] §7§eSelection markers cannot be broken. Clear them with the marking wand.
+homestead.select.conflict.outline=§8[§aHomestead§8] §7§6Flame outlines mark land unavailable because of another owner's claim.
+
+## Groups -------------------------------------------------------------------
+homestead.ui.groups.title=Groups
+homestead.ui.groups.body=Your groups. They apply on every claim of yours unless switched off here.
+homestead.ui.groups.empty=No groups created.
+homestead.ui.groups.new=New group
+homestead.ui.groups.copy=Copy from another claim
+homestead.ui.group.name=Name
+homestead.ui.group.name.hint=Builders, Neighbours, Shopkeepers...
+homestead.ui.group.here=§7In it here: §f%s
+homestead.ui.group.here.none=§8Nobody here is in it yet.
+homestead.ui.group.on=§7On this claim: §aon
+homestead.ui.group.off=§7On this claim: §coff
+homestead.ui.group.edit=Change what it allows
+homestead.ui.group.turn.on=Use it on this claim
+homestead.ui.group.turn.off=Switch it off on this claim
+homestead.ui.group.delete=Delete the group
+homestead.ui.group.copy.from=Claim to copy from
+homestead.ui.group.copy.which=Group
+homestead.ui.group.copy.members=Bring the people in it too
+homestead.ui.rule.silent=Says nothing
+homestead.ui.rule.inherit=Leave it to their groups
+homestead.ui.rule.allow=Allow
+homestead.ui.rule.deny=Refuse
+homestead.ui.rule.now.allowed=(currently allowed)
+homestead.ui.rule.now.denied=(currently refused)
+homestead.ui.trust.as=Trusted as
+homestead.ui.trust.everything=Everything (no group)
+homestead.ui.member.groups.in=§7Groups: §f%s
+homestead.ui.member.groups.none=§8In no group here.
+homestead.ui.member.groups.edit=Groups they are in
+homestead.ui.member.groups.body=Tap a group to put §f%s§r in it or take them out.
+homestead.ui.member.legend=§8~ from the claim's rules | name = from that group | * set for them alone
+homestead.group.created=§8[§aHomestead§8] §7Group §f%s§7 created.
+homestead.group.saved=§8[§aHomestead§8] §7Group §f%s§7 saved.
+homestead.group.deleted=§8[§aHomestead§8] §7Group §f%s§7 deleted.
+homestead.group.unnamed=§8[§aHomestead§8] §7§cA group needs a name.
+homestead.group.limit=§8[§aHomestead§8] §7§cGroup limit reached (%s).
+homestead.group.enabled=§8[§aHomestead§8] §7§f%s§7 now applies on this claim.
+homestead.group.disabled=§8[§aHomestead§8] §7§f%s§7 no longer applies on this claim.
+homestead.group.joined=§8[§aHomestead§8] §7§f%s§7 is now in §f%s§7.
+homestead.group.left=§8[§aHomestead§8] §7§f%s§7 is no longer in §f%s§7.
+homestead.group.clash=§8[§aHomestead§8] §7§cNot added to §f%s§c: it disagrees with §f%s§c about %s. A person may be in several groups, but not in two that contradict each other.
+homestead.group.clash.edit=§8[§aHomestead§8] §7§cNot saved: §f%s§c is also in §f%s§c, which would then disagree about %s.
+homestead.group.clash.enable=§8[§aHomestead§8] §7§cCannot enable: §f%s§c is also in §f%s§c, which disagrees about %s.
+homestead.group.copied=§8[§aHomestead§8] §7§f%s§7 applies here. People brought over: §f%s§7.
+homestead.group.copied.refused=§8[§aHomestead§8] §7§e%s of them were left out: their groups here would contradict it.
+homestead.group.copy.nowhere=§8[§aHomestead§8] §7§cYou have no other claim to copy from.
+
+## Mobs ---------------------------------------------------------------------
+homestead.ui.mobs.title=Creatures
+homestead.ui.mobs.header.spawn=May appear here
+homestead.ui.mobs.note.spawn=§8The world creating one inside your land. Refused where it would happen, so nothing piles up.
+homestead.ui.mobs.header.enter=May be here
+homestead.ui.mobs.note.enter=§8One that appeared elsewhere and came in. Refused ones are walked back out, never killed.
+homestead.ui.mobs.hostile=Monsters
+homestead.ui.mobs.animals=Animals
+homestead.ui.mobs.villagers=Villagers, traders and golems
+homestead.ui.mobs.everywhere=Apply this to every claim I own
+homestead.ui.mobs.refusing=(%s restricted)
+homestead.ui.mobs.all=(all welcome)
+homestead.mobs.saved=§8[§aHomestead§8] §7§aSaved. Nothing already living is destroyed: what may not be here is walked back out.
+homestead.mobs.saved.all=§8[§aHomestead§8] §7§aSaved on §f%s§a of your claims.
+
+## Screens ------------------------------------------------------------------
+homestead.ui.people.title=People
+homestead.ui.people.body=Tap a name for what they may do here. The grey text is the group they are in.
+homestead.ui.people.empty=Nobody trusted.
+homestead.ui.rules.header=What anyone may do here
+homestead.ui.rules.note=§8Applies to everyone with no group and no exception of their own.
+homestead.ui.mobs.never=§8Never affected: NPCs, tamed pets, saddled or chested mounts, items, frames and paintings. Nothing already alive is destroyed.
+homestead.ui.member.header=What %s may do here
+homestead.ui.member.note=§8Leave a line to their groups unless this one person is an exception.
+homestead.ui.group.header=What this group allows
+homestead.ui.group.note=§8Say nothing about what the group is not about: two groups only clash where both have an opinion.

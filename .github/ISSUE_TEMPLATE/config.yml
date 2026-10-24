@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://nullsablex.github.io/bedrock-homestead/
+    about: Installation, configuration and troubleshooting.
+  - name: Known limits
+    url: https://nullsablex.github.io/bedrock-homestead/architecture/
+    about: Constraints of the Bedrock API that some behaviour cannot escape.

@@ -1,0 +1,21 @@
+# Direct dependencies. The lockfile next to this one is generated:
+#   pip-compile --generate-hashes requirements-docs.in
+#
+# Held at 1.x on purpose. MkDocs 2.0 removes the plugin system and rewrites
+# theming with no migration path, and Material for MkDocs does not run on it.
+mkdocs==1.6.1
+mkdocs-material==9.8.0
+pymdown-extensions==12.3
+
+# Click a screenshot to open it full size. Minecraft captures are unreadable at
+# body width — action bar text especially.
+mkdocs-glightbox==0.5.2
+
+# Translated documentation. A page with no translation falls back to English
+# rather than 404ing, so languages can be added one page at a time.
+mkdocs-static-i18n==1.3.1
+
+# Required by Material's built-in `social` plugin, which renders the link
+# preview card shown when the site is pasted into Discord or a chat app.
+pillow==13.0.0
+cairosvg==2.9.1

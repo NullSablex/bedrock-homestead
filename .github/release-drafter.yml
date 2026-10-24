@@ -1,0 +1,40 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: Security
+    labels: [security]
+  - title: Added
+    labels: [enhancement, feature]
+  - title: Fixed
+    labels: [bug]
+  - title: Translations
+    labels: [translation]
+  - title: Documentation
+    labels: [documentation]
+  - title: Internal
+    labels: [chore, ci, refactor]
+
+# Item loss and duplication are the failures that matter most in an add-on
+# meant to prevent exactly those, so they move the minor digit rather than the
+# patch one.
+version-resolver:
+  major:
+    labels: [breaking]
+  minor:
+    labels: [enhancement, feature, security]
+  patch:
+    labels: [bug, chore, ci, documentation, translation, refactor]
+  default: patch
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+no-changes-template: '- No user-visible changes'
+
+# The draft is a starting point, not the release notes. The published body is
+# written by hand in CHANGELOG.md, which the release workflow reads.
+template: |
+  $CHANGES
+
+  ---
+
+  Draft only. The published notes come from the matching section of CHANGELOG.md.

@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "homestead:marker_label",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false,
+      "spawn_category": "misc"
+    },
+    "components": {
+      "minecraft:collision_box": { "width": 0.01, "height": 0.01 },
+      "minecraft:damage_sensor": {
+        "triggers": { "cause": "all", "deals_damage": false }
+      },
+      "minecraft:nameable": {
+        "always_show": true,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:persistent": {},
+      "minecraft:physics": { "has_collision": false, "has_gravity": false },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:scale": { "value": 0.01 },
+      "minecraft:type_family": { "family": ["homestead_marker"] }
+    }
+  }
+}

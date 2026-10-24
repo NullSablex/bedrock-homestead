@@ -1,0 +1,245 @@
+## Homestead - traducao para portugues do Brasil.
+## Base: en_US.lang. Chave ausente aqui cai para o ingles.
+
+
+pack.name=§aHomestead §2[§aRP§2]
+pack.description=§fReivindique um quadrado de terra: só você e quem você autorizar constroem, quebram e abrem baús ali dentro.
+
+
+## Chat --------------------------------------------------------------------
+homestead.claim.created=§8[§aHomestead§8] §7Área §f%s§7 criada: §f%s §7até §f%s§7.
+homestead.claim.created.hint=§8[§aHomestead§8] §7Só você e quem você autorizar constroem e abrem baús aqui.
+homestead.claim.unnamed=Área em %s
+homestead.claim.default=Área %s
+homestead.claim.name.empty=§8[§aHomestead§8] §7§cDigite um nome para a área.
+homestead.claim.name.used=§8[§aHomestead§8] §7§cVocê já tem uma área com esse nome.
+homestead.claim.name.saved=§8[§aHomestead§8] §7Área renomeada para §f%s§7.
+homestead.limit.count=§8[§aHomestead§8] §7§cVocê já tem %s áreas (limite %s).
+homestead.limit.small=§8[§aHomestead§8] §7§cEssa seleção é %s. A área mínima tem %s blocos de lado.
+homestead.limit.large=§8[§aHomestead§8] §7§cEssa seleção é %s. A área máxima tem %s blocos de lado.
+homestead.limit.budget=§8[§aHomestead§8] §7§cEssa área precisa de %s blocos e você tem %s de %s.
+homestead.limit.invalid=§8[§aHomestead§8] §7§cEsse contorno cruza a si mesmo ou não forma uma área válida.
+homestead.overlap.own=§8[§aHomestead§8] §7§cEssa área se sobrepõe a outra sua.
+homestead.overlap.other=§8[§aHomestead§8] §7§cEssa área está perto demais de uma área de %s.
+homestead.remove.done=§8[§aHomestead§8] §7Área removida.
+homestead.trust.already=§8[§aHomestead§8] §7%s já está autorizado.
+homestead.trust.added=§8[§aHomestead§8] §7§f%s§7 agora pode construir lá.
+homestead.trust.notified=§8[§aHomestead§8] §7%s autorizou você em uma área.
+homestead.untrust.absent=§8[§aHomestead§8] §7%s não estava autorizado.
+homestead.untrust.done=§8[§aHomestead§8] §7§f%s§7 não pode mais construir lá.
+homestead.deed.received=§8[§aHomestead§8] §7Você recebeu a escritura. Use-a para abrir o menu de áreas.
+homestead.storage.failed=§8[§aHomestead§8] §7§cNão foi possível salvar. Nenhuma mudança foi confirmada; veja o log de conteúdo.
+homestead.manage.denied=§8[§aHomestead§8] §7§cVocê não tem mais permissão para gerenciar esta área.
+
+## Protection --------------------------------------------------------------
+homestead.deny.break=§8[§aHomestead§8] §7Você não pode quebrar aqui §7- área de §f%s§7.
+homestead.deny.place=§8[§aHomestead§8] §7Você não pode construir aqui §7- área de §f%s§7.
+homestead.deny.use=§8[§aHomestead§8] §7Você não pode usar isso aqui §7- área de §f%s§7.
+homestead.deny.container=§8[§aHomestead§8] §7Você não pode abrir isso §7- área de §f%s§7.
+homestead.deny.door=§8[§aHomestead§8] §7Você não pode mexer nessa porta §7- área de §f%s§7.
+homestead.deny.mechanism=§8[§aHomestead§8] §7Você não pode acionar isso §7- área de §f%s§7.
+homestead.deny.bed=§8[§aHomestead§8] §7Essa cama não é sua §7- área de §f%s§7.
+homestead.deny.enter=§8[§aHomestead§8] §7§cVocê não pode entrar nesta área.
+
+## Permissions -------------------------------------------------------------
+homestead.rules.saved=§8[§aHomestead§8] §7§aRegras salvas.
+homestead.rules.saved.for=§8[§aHomestead§8] §7§aRegras salvas para §f%s§a.
+homestead.ui.rules.title=O que qualquer um pode fazer
+homestead.ui.rules.save=Salvar
+homestead.ui.perm.enter=Entrar na área
+homestead.ui.perm.doors=Portas, portões, botões e alavancas
+homestead.ui.perm.containers=Baús e tudo que guarda coisas
+homestead.ui.perm.use=Camas, fornalhas e outros blocos de trabalho
+homestead.ui.perm.place=Colocar blocos
+homestead.ui.perm.break=Quebrar blocos
+homestead.ui.member.body=O que §f%s§r pode fazer aqui, e de onde vem cada resposta.
+homestead.ui.member.edit=Mudar o que ele pode fazer
+homestead.ui.member.reset=Limpar exceções
+
+## Selection ---------------------------------------------------------------
+homestead.select.first=§8[§aHomestead§8] §7Canto marcado. Clique no canto oposto para fechar a forma.
+homestead.select.second=§8[§aHomestead§8] §7Os dois cantos estão marcados.
+homestead.select.cleared=§8[§aHomestead§8] §7Marcações removidas.
+homestead.select.nomarker=§8[§aHomestead§8] §7§eNão foi possível colocar a marcação ali, então o ponto não foi adicionado.
+homestead.select.point=§8[§aHomestead§8] §7Ponto %s marcado.
+homestead.select.full=§8[§aHomestead§8] §7§cEsse é o máximo de pontos que uma forma pode ter (%s).
+homestead.select.closed=§8[§aHomestead§8] §7Traçado fechado: %s paredes. Abra os controles da vara para reivindicar.
+homestead.select.snapped=§8[§aHomestead§8] §7Alinhado à parede: uma parede é reta ou forma uma diagonal exata.
+homestead.select.tooclose=§8[§aHomestead§8] §7§cÉ ali que o último ponto já está.
+homestead.select.turned=§8[§aHomestead§8] §7§7Um canto foi criado para fechar: a volta também precisa ser parede.
+homestead.wand.received=§8[§aHomestead§8] §7Vara de marcação entregue. Mire em um bloco para marcar um canto ou no ar para abrir os controles.
+homestead.wand.stored=§8[§aHomestead§8] §7Sua vara já foi entregue. Verifique onde a guardou.
+homestead.wand.gone=§8[§aHomestead§8] §7Vara de marcação guardada.
+homestead.ui.wand.start=Marcar uma área
+homestead.ui.wand.resume=Voltar à marcação
+homestead.ui.wand.title=Marcação
+homestead.ui.wand.body.none=Mire num bloco e marque o primeiro canto.
+homestead.ui.wand.body.short=Um ponto marcado. Marque o canto oposto.
+homestead.ui.wand.body.open=%s parede(s). Continue ou feche no primeiro ponto.
+homestead.ui.wand.close=Fechar o traçado aqui
+homestead.ui.wand.clear.one=Limpar o ponto %s (%s)
+homestead.ui.wand.clear.all=Limpar todos os pontos
+homestead.ui.wand.putaway=Guardar a vara
+homestead.ui.select.second=Um canto marcado. Clique no bloco do canto oposto.
+homestead.ui.select.size=§7Marcado: §f%s §7(%s blocos)
+homestead.ui.select.cost=§7Custa §f%s §7dos §f%s §7que você ainda tem
+homestead.ui.select.confirm=Reivindicar a área marcada
+homestead.ui.select.clear=Limpar as marcações
+
+## Menu --------------------------------------------------------------------
+homestead.ui.title=Homestead
+homestead.ui.back=Voltar
+homestead.ui.close=Fechar
+homestead.ui.cancel=Cancelar
+homestead.ui.player=Jogador
+homestead.ui.body.free=Você está em §aárea livre§r.
+homestead.ui.body.free.size=Uma área de um clique tem %sx%s blocos.
+homestead.ui.body.free.hint=§7Mire num bloco e use a escritura para marcar um canto.
+homestead.ui.body.mine=Você está em §a%s§r, uma das suas áreas.
+homestead.ui.body.other=Você está em §f%s§r, área de §f%s§r.
+homestead.ui.build.allowed=Construir aqui: §apermitido
+homestead.ui.build.blocked=Construir aqui: §cbloqueado
+homestead.ui.claim.here=Reivindicar aqui
+homestead.ui.mine.title=Minhas áreas
+homestead.ui.mine.empty=Nenhuma área protegida.
+homestead.ui.mine.body=Você tem %s de %s áreas.
+homestead.ui.mine.budget=§7Terra usada: §f%s §7de §f%s §7blocos
+homestead.ui.mine.summary=%s/%s áreas | %s/%s blocos
+homestead.info.bounds=§7Limites: §f%s §7até §f%s
+homestead.info.size=§7Tamanho: §f%s §7(%s blocos)
+homestead.info.size.short=§7Tamanho: §f%s
+homestead.info.trusted=§7Autorizados: §f%s
+homestead.info.trusted.none=§7Autorizados: §fninguém
+homestead.ui.manage.title=Gerenciar área
+homestead.ui.manage.here=Gerenciar esta área
+homestead.ui.claim.rename=Renomear área
+homestead.ui.claim.name=Nome da área
+homestead.ui.claim.name.hint=Até 32 letras e números.
+homestead.ui.manage.revoke.hint=§7Autorizados aqui. Toque num nome para revogar.
+homestead.ui.status.title=Estado
+homestead.ui.status.ok=§aProteção ativa
+homestead.ui.status.failed=§cProteção incompleta (%s falhas)
+homestead.ui.status.claims=%s áreas carregadas
+homestead.ui.status.compatible=O modo estável de compatibilidade está ativo. Não é preciso habilitar recursos experimentais.
+homestead.ui.visitor.header=Teste a proteção
+homestead.ui.visitor.body.off=Modo visitante: desligado. Teste suas áreas como outro jogador.
+homestead.ui.visitor.body.on=Modo visitante: ligado. Suas áreas tratam você como outro jogador.
+homestead.ui.visitor.on=Testar como visitante
+homestead.ui.visitor.off=Parar de testar como visitante
+homestead.ui.visitor.warn=§eVocê está sendo tratado como estranho nas suas próprias áreas.
+homestead.visitor.on=§8[§aHomestead§8] §7§eTeste de visitante ligado: toda área recusa você agora, inclusive as suas. Abra o menu para desligar.
+homestead.visitor.off=§8[§aHomestead§8] §7§aTeste de visitante desligado. Suas áreas voltam a te obedecer.
+homestead.ui.trust.title=Autorizar jogador
+homestead.ui.untrust.title=Revogar acesso
+homestead.ui.nobody.online=§8[§aHomestead§8] §7§cNão há outro jogador online para autorizar.
+homestead.ui.nobody.trusted=§8[§aHomestead§8] §7§cNinguém está autorizado nessa área.
+homestead.ui.remove.title=Remover área
+homestead.ui.remove.body=Apagar a área em %s?
+homestead.ui.remove.warn=§cA proteção acaba na hora.
+homestead.ui.remove.yes=Sim, remover
+homestead.ui.admin.title=Administração
+homestead.ui.admin.empty=Ninguém reivindicou nada ainda.
+homestead.admin.all=§7Áreas neste mundo: §f%s
+homestead.ui.admin.settings=Limites por jogador
+homestead.ui.admin.maxclaims=Quantidade de áreas (%s-%s)
+homestead.ui.admin.blockbudget=Total de blocos (%s-%s)
+homestead.admin.settings.invalid=§8[§aHomestead§8] §7§cUse números inteiros dentro dos limites mostrados.
+homestead.admin.settings.saved=§8[§aHomestead§8] §7Limites salvos: §f%s áreas§7 e §f%s blocos§7 por jogador.
+
+## Credits -----------------------------------------------------------------
+homestead.credits.title=Sobre
+homestead.credits.tagline=Proteção de áreas e acessos.
+homestead.credits.by=§7Por
+homestead.credits.version=§7Versão
+homestead.credits.license=§7Licença
+homestead.credits.source=§7Código
+homestead.credits.link=Repositório
+homestead.credits.disclaimer=Projeto independente, sem vínculo com Mojang ou Microsoft.
+
+## Dimensoes ----------------------------------------------------------------
+homestead.dimension.overworld=Mundo Superior
+homestead.dimension.nether=Nether
+homestead.dimension.end=O End
+
+## Shape --------------------------------------------------------------------
+homestead.ui.shape.rectangle=§8Dois pontos são cantos opostos. Um terceiro os transforma em muros.
+homestead.ui.shape.path=§8Muros traçados. Volte ao primeiro ponto para fechar.
+homestead.select.became.path=§8[§aHomestead§8] §7Terceiro ponto: agora os pontos são muros. Feche o traçado quando terminar.
+homestead.select.straightened=§8[§aHomestead§8] §7O ponto 2 foi para cima do muro: um muro é reto ou exatamente diagonal.
+homestead.select.marker.protected=§8[§aHomestead§8] §7§eMarcações não podem ser quebradas. Remova-as pela vara de marcação.
+homestead.select.conflict.outline=§8[§aHomestead§8] §7§6Contornos de chamas marcam o limite indisponível por áreas de outros jogadores.
+
+## Groups -------------------------------------------------------------------
+homestead.ui.groups.title=Grupos
+homestead.ui.groups.body=Seus grupos valem em todas as suas áreas, a menos que sejam desativados aqui.
+homestead.ui.groups.empty=Nenhum grupo criado.
+homestead.ui.groups.new=Novo grupo
+homestead.ui.groups.copy=Copiar de outra área
+homestead.ui.group.name=Nome
+homestead.ui.group.name.hint=Construtores, Vizinhos, Comerciantes...
+homestead.ui.group.here=§7Neste grupo aqui: §f%s
+homestead.ui.group.here.none=§8Ninguém daqui está nele ainda.
+homestead.ui.group.on=§7Nesta área: §aativo
+homestead.ui.group.off=§7Nesta área: §cinativo
+homestead.ui.group.edit=Mudar o que ele permite
+homestead.ui.group.turn.on=Ativar nesta área
+homestead.ui.group.turn.off=Desativar nesta área
+homestead.ui.group.delete=Apagar o grupo
+homestead.ui.group.copy.from=Área de origem
+homestead.ui.group.copy.which=Grupo
+homestead.ui.group.copy.members=Trazer também quem está nele
+homestead.ui.rule.silent=Não opina
+homestead.ui.rule.inherit=Herdar dos grupos
+homestead.ui.rule.allow=Permitir
+homestead.ui.rule.deny=Recusar
+homestead.ui.rule.now.allowed=(atualmente permitido)
+homestead.ui.rule.now.denied=(atualmente recusado)
+homestead.ui.trust.as=Autorizar como
+homestead.ui.trust.everything=Tudo (sem grupo)
+homestead.ui.member.groups.in=§7Grupos: §f%s
+homestead.ui.member.groups.none=§8Não está em nenhum grupo aqui.
+homestead.ui.member.groups.edit=Grupos em que está
+homestead.ui.member.groups.body=Toque em um grupo para adicionar ou remover §f%s§r.
+homestead.ui.member.legend=§8~ regra da área | nome = regra do grupo | * exceção individual
+homestead.group.created=§8[§aHomestead§8] §7Grupo §f%s§7 criado.
+homestead.group.saved=§8[§aHomestead§8] §7Grupo §f%s§7 salvo.
+homestead.group.deleted=§8[§aHomestead§8] §7Grupo §f%s§7 apagado.
+homestead.group.unnamed=§8[§aHomestead§8] §7§cUm grupo precisa de nome.
+homestead.group.limit=§8[§aHomestead§8] §7§cLimite de grupos atingido (%s).
+homestead.group.enabled=§8[§aHomestead§8] §7§f%s§7 agora está ativo nesta área.
+homestead.group.disabled=§8[§aHomestead§8] §7§f%s§7 foi desativado nesta área.
+homestead.group.joined=§8[§aHomestead§8] §7§f%s§7 agora está em §f%s§7.
+homestead.group.left=§8[§aHomestead§8] §7§f%s§7 não está mais em §f%s§7.
+homestead.group.clash=§8[§aHomestead§8] §7§cNão entrou em §f%s§c: ele discorda de §f%s§c quanto a %s. Uma pessoa pode estar em vários grupos, menos em dois que se contradizem.
+homestead.group.clash.edit=§8[§aHomestead§8] §7§cNão salvou: §f%s§c também está em §f%s§c, que passaria a discordar quanto a %s.
+homestead.group.clash.enable=§8[§aHomestead§8] §7§cNão pode ligar: §f%s§c também está em §f%s§c, que discorda quanto a %s.
+homestead.group.copied=§8[§aHomestead§8] §7§f%s§7 passa a valer aqui. Pessoas trazidas: §f%s§7.
+homestead.group.copied.refused=§8[§aHomestead§8] §7§e%s delas ficaram de fora: os grupos que já têm aqui contradizem esse.
+homestead.group.copy.nowhere=§8[§aHomestead§8] §7§cVocê não tem outra área de onde copiar.
+
+## Mobs ---------------------------------------------------------------------
+homestead.ui.mobs.title=Criaturas
+homestead.ui.mobs.header.spawn=Pode surgir aqui
+homestead.ui.mobs.note.spawn=§8Controla criaturas geradas pelo mundo dentro da área.
+homestead.ui.mobs.header.enter=Pode ficar aqui
+homestead.ui.mobs.note.enter=§8Controla criaturas que entraram vindas de fora. As recusadas são retiradas, nunca eliminadas.
+homestead.ui.mobs.hostile=Monstros
+homestead.ui.mobs.animals=Animais
+homestead.ui.mobs.villagers=Aldeões, mercadores e golens
+homestead.ui.mobs.everywhere=Aplicar em todas as minhas áreas
+homestead.ui.mobs.refusing=(%s com restrição)
+homestead.ui.mobs.all=(todos são bem-vindos)
+homestead.mobs.saved=§8[§aHomestead§8] §7§aSalvo. Nenhuma criatura existente é destruída: quem não pode ficar é levado para fora.
+homestead.mobs.saved.all=§8[§aHomestead§8] §7§aSalvo em §f%s§a das suas áreas.
+
+## Screens ------------------------------------------------------------------
+homestead.ui.people.title=Pessoas
+homestead.ui.people.body=Toque em um nome para ver as permissões e os grupos dessa pessoa.
+homestead.ui.people.empty=Ninguém autorizado.
+homestead.ui.rules.header=O que qualquer um pode fazer aqui
+homestead.ui.rules.note=§8Vale para todos sem grupo e sem exceção própria.
+homestead.ui.mobs.never=§8Nunca afetados: NPCs, animais domesticados, montarias com sela ou baú, itens, quadros e molduras. Criaturas existentes não são eliminadas.
+homestead.ui.member.header=O que %s pode fazer aqui
+homestead.ui.member.note=§8Deixe a linha com os grupos dela, a menos que esta pessoa seja uma exceção.
+homestead.ui.group.header=O que este grupo permite
+homestead.ui.group.note=§8Não opine sobre o que o grupo não trata: dois grupos só brigam onde ambos opinam.

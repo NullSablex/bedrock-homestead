@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  ADDON_NAME: Homestead
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    # Needs write access to create the release and upload the packages.
+    permissions:
+      contents: write     # create the release and upload the packages
+      id-token: write     # sign the provenance attestation
+      attestations: write # record it against the repository
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # full history so generate-notes can list every commit
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: Verify manifest versions match the release tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          for pack in behavior_packs/homestead resource_packs/homestead; do
+            PACK_VERSION=$(python -c "import json,sys; print('.'.join(str(n) for n in json.load(open('$pack/manifest.json'))['header']['version']))")
+            echo "${pack}: ${PACK_VERSION}"
+            if [ "${TAG_VERSION}" != "${PACK_VERSION}" ]; then
+              echo "::error::Release tag (${GITHUB_REF_NAME}) does not match ${pack} version (${PACK_VERSION})."
+              echo "::error::Bump both manifests to ${TAG_VERSION} (or retag) and try again."
+              exit 1
+            fi
+          done
+
+      - name: Static checks
+        run: python tools/check.py
+
+      # Three packages: each half on its own, plus the combined installer.
+      # Server owners want the halves; players want the one that just works.
+      - name: Build packages
+        run: python tools/build.py --all
+
+      # Provenance ties each package to the commit, workflow and runner that
+      # produced it. Anyone can verify a download came from this repository and
+      # not from someone who repacked it:
+      #   gh attestation verify Homestead_v1.0.0.mcaddon --repo NullSablex/bedrock-homestead
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.mcaddon
+            dist/*.mcpack
+
+      # The attestation also travels with the release, not only in GitHub's
+      # attestation store. That lets anyone verify a download offline, and it
+      # is what a scanner looks for when it asks whether releases are signed.
+      - name: Attach the provenance bundle
+        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/provenance.intoto.jsonl
+
+      - name: Build release body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+
+          # 1. Curated section from CHANGELOG.md — the parts a human wrote,
+          # which no API can infer from commit titles.
+          BODY=$(awk "/^## \[?v?${VERSION}\]?/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          if [ -z "$BODY" ]; then
+            BODY="See [CHANGELOG.md](CHANGELOG.md) for details."
+          fi
+
+          # 2. Auto-generated notes, used only for the "New Contributors" block
+          # and the "Full Changelog" link GitHub computes natively. The
+          # categorised "What's Changed" list is dropped: the CHANGELOG already
+          # does that job with more context.
+          AUTO=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="$TAG" \
+            -q .body 2>/dev/null || echo "")
+
+          APPENDIX=$(echo "$AUTO" | sed -n '/^## New Contributors$/,$p')
+          if [ -z "$APPENDIX" ]; then
+            APPENDIX=$(echo "$AUTO" | grep '^\*\*Full Changelog\*\*' | tail -1)
+          fi
+
+          # 3. Which file to download. Kept at the bottom so it does not push
+          # the actual notes below the fold.
+          FOOTER=$(cat <<EOF
+          ### Downloads
+
+          - \`${ADDON_NAME}_v${VERSION}.mcaddon\` — **start here.** Both packs in one file; opening it installs the lot.
+          - \`${ADDON_NAME}_BP_v${VERSION}.mcpack\` — behavior pack only.
+          - \`${ADDON_NAME}_RP_v${VERSION}.mcpack\` — resource pack only.
+
+          The two \`.mcpack\` files are for server owners placing each half by hand. **Both are required** — the resource pack carries the translation strings, and without it every message shows as a raw key.
+
+          Installation: see [the documentation](https://nullsablex.github.io/bedrock-homestead/installation/).
+          EOF
+          )
+
+          {
+            echo "$BODY"
+            if [ -n "$APPENDIX" ]; then
+              printf '\n---\n\n%s\n' "$APPENDIX"
+            fi
+            printf '\n---\n\n%s\n' "$FOOTER"
+          } > release_body.md
+
+          cat release_body.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_body.md
+          files: |
+            dist/*.mcaddon
+            dist/*.mcpack
+            dist/provenance.intoto.jsonl
+          draft: false
+          prerelease: false

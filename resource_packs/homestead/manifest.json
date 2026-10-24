@@ -1,0 +1,21 @@
+{
+  "format_version": 2,
+  "metadata": {
+    "authors": ["NullSablex"],
+    "product_type": "addon"
+  },
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "9f4c0d72-1a85-4e39-b6d2-40c7e5138ab6",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 26, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "2b61e8d4-57f0-4c93-a1e6-8d3b92f07c51",
+      "version": [1, 0, 0]
+    }
+  ]
+}

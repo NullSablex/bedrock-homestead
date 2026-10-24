@@ -1,0 +1,35 @@
+name: check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: Static checks
+        run: python tools/check.py
+
+      - name: Logic stress tests
+        run: node --experimental-vm-modules tools/stress.mjs
+
+      - name: Build the add-on
+        run: python tools/build.py
+
+      # Proof the package is installable, not merely that the build exited zero.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: homestead-mcaddon
+          path: dist/*.mcaddon
+          if-no-files-found: error

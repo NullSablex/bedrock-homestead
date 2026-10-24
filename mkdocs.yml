@@ -1,0 +1,124 @@
+site_name: Homestead
+site_description: Homestead land protection for Minecraft Bedrock 1.26+
+site_url: https://nullsablex.github.io/bedrock-homestead/
+repo_url: https://github.com/NullSablex/bedrock-homestead
+repo_name: NullSablex/bedrock-homestead
+edit_uri: edit/master/docs/
+copyright: Copyright &copy; NullSablex - MPL-2.0
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    # navigation.instant is deliberately absent: it breaks the i18n language
+    # switcher, and being able to change language matters more here than
+    # shaving a page load.
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - For players:
+      - What it does: features.md
+      - Installation: installation.md
+      - Using the deed: tool.md
+  - For server owners:
+      - Configuration: configuration.md
+      - Languages: languages.md
+  - For developers:
+      - Architecture: architecture.md
+      - Development: development.md
+
+# Notes for contributors that live next to what they describe, but are not
+# pages of the site.
+exclude_docs: |
+  img/README.md
+
+plugins:
+  # `search` is on by default, but naming any plugin replaces the default list,
+  # so it has to be repeated here or the site loses its search box.
+  - search
+
+  # Click a screenshot to open it full size. Minecraft captures are unreadable
+  # at body width, and chat text especially so.
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      zoomable: true
+      draggable: true
+
+  # Link preview cards, rendered at build time. This is what shows up when the
+  # site is pasted into Discord or a chat app.
+  - social:
+      # Cards need cairo, a system C library that is a package manager away on
+      # Linux and a yak shave on Windows. CI installs it and sets CI=true, so
+      # cards are rendered where they are published and skipped where someone
+      # is just previewing a page locally.
+      enabled: !ENV [CI, false]
+      cards_layout_options:
+        background_color: "#2e7d32"
+
+  # Translated documentation.
+  #
+  # `suffix` structure: docs/index.md is English, docs/index.pt-BR.md is its
+  # Brazilian Portuguese version. A page with no translation falls back to the
+  # English one rather than 404ing, so a language can be added one page at a
+  # time instead of all at once.
+  #
+  # Two locales for now, matching the two the add-on speaks in game. More
+  # belong here only once someone is willing to keep the prose current.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: pt-BR
+          name: Português (Brasil)
+          build: true
+          nav_translations:
+            Home: Início
+            For players: Para jogadores
+            What it does: O que ele faz
+            Installation: Instalação
+            Using the deed: Usando a escritura
+            For server owners: Para donos de servidor
+            Configuration: Configuração
+            Languages: Idiomas
+            For developers: Para desenvolvedores
+            Architecture: Arquitetura
+            Development: Desenvolvimento
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/NullSablex

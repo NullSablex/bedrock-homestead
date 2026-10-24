@@ -1,0 +1,19 @@
+name: Release Drafter
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+# Default: nothing. The single job opts into exactly what it needs.
+permissions: {}
+
+jobs:
+  update-release-draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create and update the release draft
+      pull-requests: read  # read titles and labels to generate the notes
+    steps:
+      - uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
