@@ -9,7 +9,7 @@ pymdown-extensions==12.3
 
 # Click a screenshot to open it full size. Minecraft captures are unreadable at
 # body width — action bar text especially.
-mkdocs-glightbox==0.5.2
+mkdocs-glightbox==0.5.3
 
 # Translated documentation. A page with no translation falls back to English
 # rather than 404ing, so languages can be added one page at a time.
