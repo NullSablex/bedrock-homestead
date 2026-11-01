@@ -2,15 +2,15 @@
 
 ## Setup
 
-Python 3.9+ is the only requirement. There is no Node dependency and no
-bundler — the add-on ships the JavaScript the game runs.
+Use stable Rust and Node.js. There is no JavaScript bundler — the add-on ships
+the same modules exercised by the deterministic stress suite.
 
 ```bash
 git clone https://github.com/NullSablex/bedrock-homestead
 cd bedrock-homestead
-python tools/check.py     # static analysis
-node --experimental-vm-modules tools/stress.mjs # exhaustive logic checks
-python tools/build.py     # writes dist/
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic
+cargo xtask all           # checks, stress tests and writes dist/
 ```
 
 To test in game, junction the packs into the game's development folders so it
@@ -23,12 +23,12 @@ Without it a script error is invisible and you will chase a ghost.
 ## Before opening a pull request
 
 ```bash
-python tools/check.py
-node --experimental-vm-modules tools/stress.mjs
-python tools/build.py
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic
+cargo xtask all
 ```
 
-Both run in CI, so a failure there is a failure here. `check.py` covers imports
+They run in CI, so a failure there is a failure here. `cargo xtask check` covers imports
 resolving, config keys existing, translation keys present in every language
 file, characters that break the in-game font, JSON validity, and side effects
 that would throw inside `beforeEvents`.
@@ -48,7 +48,7 @@ tool, so it has to be the same string for everyone.
 
 **Stay inside Latin-1 in displayed text.** Accented letters render fine; a
 single character above `U+00FF` makes Minecraft redraw the whole line in a
-fallback font that clashes with everything else. `check.py` rejects them.
+fallback font that clashes with everything else. `cargo xtask check` rejects them.
 
 **Comments explain why, not what.** A comment restating the line below it is
 noise and will be removed. A comment recording a constraint the next reader
@@ -62,7 +62,7 @@ split it.
 1. Copy `resource_packs/homestead/texts/en_US.lang` to your language code.
 2. Translate the values, leaving the keys untouched.
 3. Add the code to `texts/languages.json`.
-4. Run `python tools/check.py` — it fails on any key the code uses that your
+4. Run `cargo xtask check` — it fails on any key the code uses that your
    file is missing.
 
 Keep the `%s` placeholders and the `§` colour codes. The add-on currently ships
@@ -103,8 +103,8 @@ for what you submit**, and authorship stays human — no `Co-Authored-By:`
 pointing at an assistant. See [AI-POLICY.md](AI-POLICY.md).
 
 The failure mode worth naming: assistants routinely invent Bedrock APIs that do
-not exist, or that existed in 1.21 and were removed by 1.26. Nothing here runs
-JavaScript, so only the game can catch that.
+not exist, or that existed in 1.21 and were removed by 1.26. The stress suite
+runs the real modules against a mock, but only the game validates engine behavior.
 
 ## Licence
 

@@ -9,7 +9,7 @@ missing. Player-entered area names are kept as entered after validation.
 1. Copy `resource_packs/homestead/texts/en_US.lang` to a new locale file.
 2. Translate the text after each `=` without changing the key or placeholders.
 3. Add the locale filename to `resource_packs/homestead/texts/languages.json`.
-4. Run `python tools/check.py` to find missing, extra or invalid entries.
+4. Run `cargo xtask check` to find missing, extra or invalid entries.
 5. Test menus, action-bar messages and chat output in Minecraft at the target
    UI scale.
 

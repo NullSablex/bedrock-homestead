@@ -1,7 +1,7 @@
 import { ItemStack, system, world } from "@minecraft/server";
 import { CONFIG } from "./config.js";
 import { subscribeSafe, coveredElsewhere } from "./safe.js";
-import { claimAt, mayDo } from "./claims.js";
+import { claimAt, claimOwnerName, mayDo } from "./claims.js";
 import {
   adjacentLocation, interactionKind, isInteractive, itemMutationAction,
 } from "./blocks.js";
@@ -31,7 +31,7 @@ const INTERACTION_DENIALS = {
  * one throws and the cancel never lands. system.run defers it by a tick.
  */
 function deny(player, claim, key) {
-  system.run(() => player.sendMessage(t(key, claim.ownerName)));
+  system.run(() => player.sendMessage(t(key, claimOwnerName(claim))));
 }
 
 function denyMarker(player) {

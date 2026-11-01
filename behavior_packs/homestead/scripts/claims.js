@@ -19,6 +19,7 @@ import { isOperator } from "./access.js";
  * scan.
  */
 const KEY = "homestead:areas";
+export const PUBLIC_OWNER_ID = "homestead:public";
 
 function readAll() {
   try {
@@ -50,6 +51,23 @@ export function allClaims() {
 
 export function claimsOf(ownerId) {
   return readAll().filter((c) => c.ownerId === ownerId);
+}
+
+export function isPublicClaim(claim) {
+  return claim?.public === true || claim?.ownerId === PUBLIC_OWNER_ID;
+}
+
+export function publicClaims() {
+  return readAll().filter(isPublicClaim);
+}
+
+export function playerClaims() {
+  return readAll().filter((claim) => !isPublicClaim(claim));
+}
+
+/** RawMessage-safe owner label for chat and forms. */
+export function claimOwnerName(claim) {
+  return isPublicClaim(claim) ? t("homestead.owner.public") : String(claim?.ownerName ?? "");
 }
 
 /** Plain, bounded labels cannot inject formatting into forms or world data. */
@@ -115,66 +133,96 @@ export function usedBlocks(ownerId) {
 }
 
 /**
+ * Checks geometry without changing the registry.
+ *
+ * Creation and reshaping deliberately share this contract. That keeps an edit
+ * from becoming a quieter way around the side, budget, overlap or safety-gap
+ * limits enforced when the area was first created.
+ */
+function geometryProblem(list, dimensionId, shape, options) {
+  const cfg = CONFIG.selection;
+  const limits = protectionLimits();
+  const {
+    ownerId, publicArea, exceptId,
+    budgetCredit = 0, relatedOwnerId,
+  } = options;
+
+  if (!isValidShape(shape)) return t("homestead.limit.invalid");
+
+  const { width, depth } = sizeOf(shape);
+  if (width < cfg.minSide || depth < cfg.minSide) {
+    return t("homestead.limit.small", `${width}x${depth}`, cfg.minSide);
+  }
+  if (width > cfg.maxSide || depth > cfg.maxSide) {
+    return t("homestead.limit.large", `${width}x${depth}`, cfg.maxSide);
+  }
+
+  if (!publicArea) {
+    const used = list
+      .filter((claim) => claim.ownerId === ownerId)
+      .reduce((total, claim) => total + areaOf(claim), 0);
+    const wanted = areaOf(shape);
+    const usedWithoutEditedClaim = used - budgetCredit;
+    const available = Math.max(0, limits.blockBudget - usedWithoutEditedClaim);
+    // If an administrator lowered the limit below existing use, players must
+    // still be able to shrink or move an area of the same size. Only an edit
+    // that worsens the overage is refused.
+    const exceedsBudget = usedWithoutEditedClaim + wanted > limits.blockBudget;
+    if (exceedsBudget && wanted > budgetCredit) {
+      return t("homestead.limit.budget", wanted, available, limits.blockBudget);
+    }
+  }
+
+  for (const claim of list) {
+    if (claim.id === exceptId || claim.dimension !== dimensionId) continue;
+
+    // Related land may touch but never overlap. Public land remains related to
+    // the operator who created it even when another operator later reshapes it.
+    const related = claim.ownerId === ownerId ||
+      (publicArea && relatedOwnerId && claim.ownerId === relatedOwnerId);
+    const gap = related ? 0 : CONFIG.minGapBetweenOwners;
+    if (!conflicts(shape, claim, gap)) continue;
+
+    if (claim.ownerId === ownerId) {
+      return t(publicArea ? "homestead.overlap.public" : "homestead.overlap.own");
+    }
+    if (claim.ownerId === relatedOwnerId) return t("homestead.overlap.own");
+    return t("homestead.overlap.other", claimOwnerName(claim));
+  }
+
+  return undefined;
+}
+
+/**
  * Validates and creates. Returns { ok: true, claim } or { ok: false, message },
  * where `message` is already a RawMessage ready to be sent.
  *
  * Every rejection says the number that was exceeded and the number allowed. A
  * refusal that only says no leaves the player guessing how much smaller to try.
  */
-export function createClaim(player, dimensionId, shape, requestedName) {
+export function createClaim(player, dimensionId, shape, requestedName, options = {}) {
   const list = readAll();
-  const cfg = CONFIG.selection;
   const limits = protectionLimits();
-
-  if (!isValidShape(shape)) {
-    return { ok: false, message: t("homestead.limit.invalid") };
+  const publicArea = options.public === true;
+  if (publicArea && !isOperator(player)) {
+    return { ok: false, message: t("homestead.manage.denied") };
   }
+  const ownerId = publicArea ? PUBLIC_OWNER_ID : player.id;
 
-  const mine = list.filter((c) => c.ownerId === player.id);
-  if (mine.length >= limits.maxClaims) {
+  const mine = list.filter((c) => c.ownerId === ownerId);
+  if (!publicArea && mine.length >= limits.maxClaims) {
     return { ok: false, message: t("homestead.limit.count", mine.length, limits.maxClaims) };
   }
 
   const name = cleanClaimName(requestedName) || nextClaimName(mine);
-  if (!claimNameAvailable(player.id, name)) {
+  if (!claimNameAvailable(ownerId, name)) {
     return { ok: false, message: t("homestead.claim.name.used") };
   }
 
-  const { width, depth } = sizeOf(shape);
-  if (width < cfg.minSide || depth < cfg.minSide) {
-    return { ok: false, message: t("homestead.limit.small", `${width}x${depth}`, cfg.minSide) };
-  }
-  if (width > cfg.maxSide || depth > cfg.maxSide) {
-    return { ok: false, message: t("homestead.limit.large", `${width}x${depth}`, cfg.maxSide) };
-  }
-
-  const wanted = areaOf(shape);
-  const used = usedBlocks(player.id);
-  if (used + wanted > limits.blockBudget) {
-    return {
-      ok: false,
-      message: t("homestead.limit.budget", wanted, limits.blockBudget - used, limits.blockBudget),
-    };
-  }
-
-  for (const c of list) {
-    if (c.dimension !== dimensionId) continue;
-    /*
-     * Against your own claims the gap does not apply, and that is deliberate:
-     * several small claims sitting flush are how a player fences an awkward
-     * shape — a farm, a village, anything a single rectangle would not cover.
-     * Only real overlap is refused.
-     */
-    const gap = c.ownerId === player.id ? 0 : CONFIG.minGapBetweenOwners;
-    if (conflicts(shape, c, gap)) {
-      return {
-        ok: false,
-        message: c.ownerId === player.id
-          ? t("homestead.overlap.own")
-          : t("homestead.overlap.other", c.ownerName),
-      };
-    }
-  }
+  const problem = geometryProblem(list, dimensionId, shape, {
+    ownerId, publicArea, relatedOwnerId: publicArea ? player.id : undefined,
+  });
+  if (problem) return { ok: false, message: problem };
 
   // The clock alone can repeat: two claims made in the same millisecond would
   // share an id, and every lookup reads the first match. The list is already
@@ -188,8 +236,9 @@ export function createClaim(player, dimensionId, shape, requestedName) {
   const claim = {
     id,
     name,
-    ownerId: player.id,
-    ownerName: player.name,
+    ownerId,
+    ownerName: publicArea ? "Server" : player.name,
+    ...(publicArea ? { public: true, createdBy: player.id } : {}),
     dimension: dimensionId,
     x1: shape.x1, x2: shape.x2, z1: shape.z1, z2: shape.z2,
     // Present only for a polygon; a rectangle is fully described by its box.
@@ -203,11 +252,59 @@ export function createClaim(player, dimensionId, shape, requestedName) {
     // Monsters refused, everything else welcome: the arrangement almost every
     // owner ends up at by hand. Existing claims keep whatever they already say.
     mobs: defaultMobRules(),
+    ...(publicArea ? { combat: { allowPvp: false } } : {}),
     time: Date.now(),
   };
   list.push(claim);
   if (!writeAll(list)) return { ok: false, message: t("homestead.storage.failed") };
   return { ok: true, claim };
+}
+
+/**
+ * Atomically replaces only an area's geometry.
+ *
+ * The stored record is read again at save time, authority is checked again,
+ * and every creation constraint is re-applied with the old surface credited
+ * back to its owner. A rejected edit leaves the original record untouched.
+ */
+export function reshapeClaim(player, id, dimensionId, shape) {
+  const list = readAll();
+  const index = list.findIndex((claim) => claim.id === id);
+  if (index < 0) return { ok: false, message: t("homestead.claim.missing") };
+
+  const current = list[index];
+  if (!mayManage(current, player)) {
+    return { ok: false, message: t("homestead.manage.denied") };
+  }
+  if (current.dimension !== dimensionId) {
+    return { ok: false, message: t("homestead.claim.edit.dimension") };
+  }
+
+  const publicArea = isPublicClaim(current);
+  // Public records created before creator attribution existed are adopted by
+  // the first operator who successfully reshapes them. This preserves the
+  // original rule that server land may touch that operator's private land.
+  const relatedOwnerId = publicArea ? (current.createdBy ?? player.id) : undefined;
+  const problem = geometryProblem(list, dimensionId, shape, {
+    ownerId: current.ownerId,
+    publicArea,
+    exceptId: current.id,
+    budgetCredit: publicArea ? 0 : areaOf(current),
+    relatedOwnerId,
+  });
+  if (problem) return { ok: false, message: problem };
+
+  const changed = {
+    ...current,
+    ...(publicArea && !current.createdBy ? { createdBy: relatedOwnerId } : {}),
+    x1: shape.x1, x2: shape.x2, z1: shape.z1, z2: shape.z2,
+  };
+  delete changed.points;
+  if (shape.points) changed.points = shape.points.map((point) => ({ ...point }));
+
+  list[index] = changed;
+  if (!writeAll(list)) return { ok: false, message: t("homestead.storage.failed") };
+  return { ok: true, claim: changed };
 }
 
 export function removeClaim(id) {
@@ -227,12 +324,12 @@ export function updateClaim(claim) {
 }
 
 /**
- * Players who have asked to be treated as strangers in every claim.
+ * Players who have asked to preview stranger permissions in their own claims.
  *
  * A single player cannot otherwise test their own protection: they own the
  * land, so every rule says yes, and the only way to see a refusal is to find a
- * second person. This flips the answer for one player who asked for it, which
- * turns "does the protection work" into something answerable alone.
+ * second person. The preview applies the public flags of only their own land;
+ * real access to anybody else's claim remains unchanged.
  *
  * Deliberately not persisted. Left on by accident it locks someone out of
  * their own base, and a flag that survives a relog is a flag nobody remembers
@@ -260,7 +357,11 @@ export function forgetVisitor(playerId) {
  * is folded in, because that state belongs to the session and not to the land.
  */
 export function mayDo(claim, player, action) {
-  return may(claim, player, action, visitors.has(player.id));
+  // The test previews the public rules of the player's own land. Applying it
+  // to every claim would change their real memberships elsewhere and could
+  // turn a harmless preview into an actual entry lockout.
+  const testingOwnClaim = visitors.has(player.id) && claim?.ownerId === player.id;
+  return may(claim, player, action, testingOwnClaim);
 }
 
 /** Shorthand for the commonest question: may they change the blocks here? */

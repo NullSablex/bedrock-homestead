@@ -48,15 +48,14 @@ ways. Before submitting, check these in particular:
   components that do not exist, or that existed in 1.21 and were removed by
   1.26. Confirm every API call against the real
   [`@minecraft/server`](https://learn.microsoft.com/minecraft/creator/scriptapi/)
-  documentation for the version in `manifest.json`. `python tools/check.py`
+  documentation for the version in `manifest.json`. `cargo xtask check`
   catches broken imports and missing config keys, but it cannot tell you whether
   `player.someMethod()` exists.
 
-- **Behaviour that cannot be verified statically.** Nothing in this repository
-  executes JavaScript; the game is the only test. A change that looks right and
-  was never run is exactly the kind of thing an assistant produces confidently.
-  Say in the pull request what you tested in game, or say plainly that you did
-  not.
+- **Behaviour that cannot be verified completely outside the game.** The stress
+  suite executes the real JavaScript modules against a Bedrock API mock, but the
+  engine remains the final test. Say in the pull request what you tested in
+  game, or say plainly that you did not.
 
 - **Non-existent or malicious dependencies.** Do not add a package because an AI
   suggested it; plausible names may not exist, or may be typosquatting. The
@@ -78,7 +77,8 @@ This policy loosens nothing. Everything submitted, AI-assisted or not, must:
 - Follow the conventions in [CONTRIBUTING.md](CONTRIBUTING.md) — en-US source,
   player text through translation keys, Latin-1 in displayed strings, comments
   that explain why rather than what.
-- Pass `python tools/check.py` and build with `python build.py`.
+- Pass `cargo fmt --all --check`, Clippy pedantic on all targets and
+  `cargo xtask all`.
 - Record any API constraint it uncovers in
   [`docs/architecture.md`](docs/architecture.md), so the next person does not
   pay to learn it twice.

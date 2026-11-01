@@ -1,8 +1,8 @@
 # Configuration
 
 Most worlds need no file edits. A player whose native Bedrock permission level
-is **Operator** sees **Administration** in the Homestead menu. Tags, command
-permissions and custom permission profiles do not grant this access.
+is **Operator** sees **Administration** in the Homestead menu. Custom permission
+profiles and tags do not grant this access.
 
 ## Operator settings
 
@@ -20,6 +20,12 @@ increase the amount of stored data and work performed while players move.
 Existing claims are not deleted when a limit is lowered; the player simply
 cannot create more until usage is back within the limit.
 
+Public claims do not consume a player's count or block budget. They belong to
+the server identity, are listed separately from player claims and can be
+created, edited or removed by any native operator. Their management screen can
+disable PvP. Incoming projectiles are always reflected by every protected area
+and do not have a configurable switch.
+
 ## Advanced defaults
 
 Source installations can adjust `behavior_packs/homestead/scripts/config.js`
@@ -35,6 +41,8 @@ settings:
 | `selection.maxPoints` | 64 | Maximum points in a custom boundary |
 | `selection.closeWithin` | 2 | Distance accepted when closing near point 1 |
 | `presence.everyTicks` | 5 | Ticks between player-presence checks |
+| `presence.creatureEveryTicks` | 10 | Ticks between checks of creatures in loaded chunks |
+| `projectiles.everyTicks` | 1 | Ticks between checks of tracked projectiles |
 | `quickClaim` | `false` | Whether the optional fixed-size quick claim is enabled |
 | `quickSize` | 33 | Side length used only when quick claim is enabled |
 

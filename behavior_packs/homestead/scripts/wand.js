@@ -3,6 +3,7 @@ import { CONFIG } from "./config.js";
 import { subscribeSafe } from "./safe.js";
 import { isInteractive } from "./blocks.js";
 import { isWand } from "./items.js";
+import { claimOwnerName } from "./claims.js";
 import {
   markCorner, selectedShape, clearSelection,
 } from "./selection.js";
@@ -192,16 +193,21 @@ export function registerWand() {
 
     const {
       corners, marked, full, closed, snapped, tooClose, turned,
-      becamePath, straightened, denied,
+      becamePath, straightened, invalidReplacement, denied,
     } = markCorner(player, block.location);
 
     if (denied) {
-      player.sendMessage(t("homestead.deny.place", denied.ownerName));
+      player.sendMessage(t("homestead.deny.place", claimOwnerName(denied)));
       return;
     }
 
     if (full) {
       player.sendMessage(t("homestead.select.full", CONFIG.selection.maxPoints));
+      return;
+    }
+
+    if (invalidReplacement) {
+      player.sendMessage(t("homestead.select.edit.wall"));
       return;
     }
 

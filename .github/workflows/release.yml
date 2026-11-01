@@ -26,35 +26,34 @@ jobs:
           fetch-depth: 0   # full history so generate-notes can list every commit
           persist-credentials: false
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.14"
-
       - name: Verify manifest versions match the release tag
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
+          RELEASE_VERSION=$(tr -d '\r\n' < VERSION)
+          if [ "${TAG_VERSION}" != "${RELEASE_VERSION}" ]; then
+            echo "::error::Release tag (${GITHUB_REF_NAME}) does not match VERSION (${RELEASE_VERSION})."
+            exit 1
+          fi
+          PACK_VERSION_EXPECTED="${RELEASE_VERSION%%-*}"
           for pack in behavior_packs/homestead resource_packs/homestead; do
-            PACK_VERSION=$(python -c "import json,sys; print('.'.join(str(n) for n in json.load(open('$pack/manifest.json'))['header']['version']))")
+            PACK_VERSION=$(jq -r '.header.version | map(tostring) | join(".")' "$pack/manifest.json")
             echo "${pack}: ${PACK_VERSION}"
-            if [ "${TAG_VERSION}" != "${PACK_VERSION}" ]; then
-              echo "::error::Release tag (${GITHUB_REF_NAME}) does not match ${pack} version (${PACK_VERSION})."
-              echo "::error::Bump both manifests to ${TAG_VERSION} (or retag) and try again."
+            if [ "${PACK_VERSION_EXPECTED}" != "${PACK_VERSION}" ]; then
+              echo "::error::VERSION core (${PACK_VERSION_EXPECTED}) does not match ${pack} version (${PACK_VERSION})."
+              echo "::error::Bedrock manifests use only the numeric core; pre-release labels belong in VERSION."
               exit 1
             fi
           done
 
-      - name: Static checks
-        run: python tools/check.py
-
       # Three packages: each half on its own, plus the combined installer.
       # Server owners want the halves; players want the one that just works.
-      - name: Build packages
-        run: python tools/build.py --all
+      - name: Verify, stress and build packages
+        run: cargo xtask all
 
       # Provenance ties each package to the commit, workflow and runner that
       # produced it. Anyone can verify a download came from this repository and
       # not from someone who repacked it:
-      #   gh attestation verify Homestead_v1.0.0.mcaddon --repo NullSablex/bedrock-homestead
+      #   gh attestation verify Homestead_v1.1.0-beta.1.mcaddon --repo NullSablex/bedrock-homestead
       - name: Attest build provenance
         id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -131,4 +130,4 @@ jobs:
             dist/*.mcpack
             dist/provenance.intoto.jsonl
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

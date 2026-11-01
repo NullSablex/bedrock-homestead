@@ -20,15 +20,15 @@ import { t } from "./msg.js";
  * can do is be quick enough that being late does not matter — four times a
  * second, which is inside the distance anything covers in a stride.
  *
- * Players and creatures are the same problem and get the same answer, in the
- * same pass. Waiting for a monster to actually swing at something was tried
- * and is worse than it sounds: by the time a hit is reported the thing is
- * already at the door, and the whole point of a boundary is to be a boundary
- * rather than an alarm.
+ * Players and creatures are the same problem but not the same query. Players
+ * are checked directly. Creatures are read once from each relevant dimension;
+ * the API returns the entities in loaded/simulated chunks, which is precisely
+ * where movement can happen. Unloaded chunks need no artificial ticket: their
+ * entities are frozen until the game loads them again.
  *
- * The pass costs nothing where nothing is asked of it. It runs over the
- * players online rather than over the claims in the world, and it looks for
- * creatures only when the player is standing in a claim that refuses some.
+ * Denied claims are indexed by chunk for the duration of each creature pass.
+ * A loaded entity therefore checks only the claims occupying its own chunk,
+ * rather than every claim in the world.
  */
 
 /** playerId -> the last position they were entitled to occupy. */
@@ -237,39 +237,70 @@ function watchPresence() {
       tell(player, "homestead.deny.enter");
     }
 
-    if (here) sweepCreatures(player, here);
   }
 }
 
 /**
- * The creatures around one player, in the claim they are standing in.
- *
- * Around the PLAYER and not over the claim, because that is where the cost is
- * worth paying: a monster nobody is present for is bothering nobody, and a
- * claim with nobody in it barely simulates. A world of a hundred claims with
- * one player awake costs one query, and none at all while that player is on
- * land that welcomes everything.
+ * Bucket the denied claims by the chunks they occupy. Chunk coordinates use
+ * floor division so negative positions match Bedrock's chunk grid.
  */
-function sweepCreatures(player, claim) {
+function claimsByLoadedChunk() {
+  const dimensions = new Map();
+  for (const claim of allClaims()) {
+    if (!refusesAnyone(claim)) continue;
+
+    let chunks = dimensions.get(claim.dimension);
+    if (!chunks) {
+      chunks = new Map();
+      dimensions.set(claim.dimension, chunks);
+    }
+
+    const chunkX1 = Math.floor(claim.x1 / 16);
+    const chunkX2 = Math.floor(claim.x2 / 16);
+    const chunkZ1 = Math.floor(claim.z1 / 16);
+    const chunkZ2 = Math.floor(claim.z2 / 16);
+    for (let chunkX = chunkX1; chunkX <= chunkX2; chunkX++) {
+      for (let chunkZ = chunkZ1; chunkZ <= chunkZ2; chunkZ++) {
+        const key = `${chunkX},${chunkZ}`;
+        const bucket = chunks.get(key) ?? [];
+        bucket.push(claim);
+        chunks.set(key, bucket);
+      }
+    }
+  }
+  return dimensions;
+}
+
+/**
+ * Enforce creature entry in every currently simulated claim.
+ *
+ * `Dimension.getEntities` cannot return entities from an unloaded chunk. That
+ * is useful here: unloaded entities cannot move either, so the query follows
+ * the game's simulation boundary without keeping land alive artificially.
+ */
+export function patrolCreatures() {
   const cfg = CONFIG.presence;
   if (!cfg.pushOutCreatures) return;
 
-  // Nothing refused here means nothing to look for, and looking is the
-  // expensive half of this.
-  if (!refusesAnyone(claim)) return;
+  for (const [dimensionId, chunks] of claimsByLoadedChunk()) {
+    let entities;
+    try {
+      entities = world.getDimension(dimensionId).getEntities({
+        excludeTypes: ["minecraft:player", ...cfg.mobsAllowed],
+      });
+    } catch {
+      continue;
+    }
 
-  let entities;
-  try {
-    entities = player.dimension.getEntities({
-      location: player.location,
-      maxDistance: cfg.creatureRadius,
-      excludeTypes: ["minecraft:player", ...cfg.mobsAllowed],
-    });
-  } catch {
-    return;
+    for (const entity of entities) {
+      const x = Math.floor(entity.location.x);
+      const z = Math.floor(entity.location.z);
+      const bucket = chunks.get(`${Math.floor(x / 16)},${Math.floor(z / 16)}`);
+      if (!bucket) continue;
+      const claim = bucket.find((candidate) => contains(candidate, x, z));
+      if (claim) pushOut(claim, entity);
+    }
   }
-
-  for (const entity of entities) pushOut(claim, entity);
 }
 
 /**
@@ -321,14 +352,9 @@ function pushOut(claim, entity) {
  * happens, one tick old, before the creature has been anywhere or done
  * anything.
  *
- * There used to be a patrol as well, sweeping every claim twice a second and
- * pushing out whatever it found. It was there because this handler was not,
- * and it never worked: a dark corner refills faster than a sweep can empty it,
- * so what an owner saw was a crowd pressed against their fence. With the spawn
- * refused at the source there is nothing for a patrol to find, and a sweep of
- * every claim forever is not a cost worth paying for the rare mob that walked
- * in from outside — that one is a visitor, and the block protections already
- * refuse it everything it might break.
+ * The loaded-chunk patrol handles creatures that walk in from elsewhere. This
+ * event remains necessary because refusing a natural spawn immediately avoids
+ * briefly creating a mob inside before the next patrol pass.
  *
  * Only what the WORLD made. Anything bred, hatched, released from an egg, or
  * already alive when the chunk loaded was put there by somebody, and this is
@@ -350,12 +376,12 @@ function refuseSpawn(entity) {
 }
 
 export function registerPresence() {
-  /*
-   * One watch for both, because they are one question: who is inside that
-   * should not be. The claim rules decide the rest.
-   */
   if (CONFIG.presence.enforceEntry) {
     system.runInterval(watchPresence, CONFIG.presence.everyTicks);
+  }
+
+  if (CONFIG.presence.pushOutCreatures) {
+    system.runInterval(patrolCreatures, CONFIG.presence.creatureEveryTicks);
   }
 
   /*

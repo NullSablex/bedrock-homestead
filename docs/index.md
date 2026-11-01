@@ -27,7 +27,8 @@ enter, build, break, open containers and use blocks inside them.
 5. Give the area a name and configure its people, permissions and creatures.
 
 No commands, cheats or experimental APIs are required. Operators can change
-the world-wide claim count and block budget from the Administration menu.
+the world-wide claim count and block budget, inspect player claims and create
+server-owned public areas from the Administration menu.
 
 - [See every protection](features.md)
 - [Follow the complete marking guide](tool.md)

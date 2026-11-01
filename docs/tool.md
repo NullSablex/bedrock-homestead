@@ -21,9 +21,11 @@ Point 1 +-------------------+
 ```
 
 After point 2, aim at empty space, use the wand and select the option to claim
-the marked area. Do **not** walk around and mark all four corners: placing point
-3 intentionally switches to custom-boundary mode. An unfinished custom path
-can resemble a square with one missing wall because it has not yet been closed.
+the marked area. A native operator chooses whether it is private or a
+server-owned public area. Do **not** walk around and mark all four corners:
+placing point 3 intentionally switches to custom-boundary mode. An unfinished
+custom path can resemble a square with one missing wall because it has not yet
+been closed.
 
 ## Custom boundaries
 
@@ -52,4 +54,17 @@ selection removes its temporary blocks, labels and particles.
 The claim flow asks for a short name. The name is shown first in **My areas**;
 the management screen also identifies its dimension and coordinates. From that
 screen the owner can rename it, manage people, public permissions, groups and
-creatures, or remove it.
+creatures, edit its boundary or remove it.
+
+**Edit boundary** displays the stored points with the marking wand. Remove the
+points that need to move, mark their replacements and choose **Save new
+boundary**. The old boundary remains active until the replacement passes the
+same size, block-budget, separation and overlap checks as a new claim. Putting
+the wand away cancels the edit without changing the area.
+
+Public areas also offer a PvP switch and can be managed by every native
+operator. Their **Public presets** option applies one of three confirmed rule
+sets: Safe zone blocks PvP, Arena allows it, and Community area keeps it
+disabled while allowing ordinary public interaction. All three keep
+construction restricted. Incoming projectiles always ricochet in every area,
+independently of presets.

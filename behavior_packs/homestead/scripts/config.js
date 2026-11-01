@@ -153,6 +153,11 @@ export const CONFIG = {
     retryTicks: 5,
   },
 
+  /** Incoming arrows and throwable entities are observed every game tick. */
+  projectiles: {
+    everyTicks: 1,
+  },
+
   /**
    * Shown on the credits screen. Plain values, not translation keys: a name is
    * a name in every language, and a version number is a version number.
@@ -160,7 +165,7 @@ export const CONFIG = {
   credits: {
     name: "Homestead",
     author: "NullSablex",
-    version: "1.0.0",
+    version: "1.1.0-beta.1",
     license: "MPL-2.0",
     /**
      * Two forms of the same address, because two surfaces have two widths. A
@@ -396,11 +401,11 @@ export const CONFIG = {
    * undone, which is why these are watches on a timer rather than handlers.
    */
   presence: {
-    /** The watch: send uninvited players, and refused creatures, back out. */
+    /** Send uninvited players back out. */
     enforceEntry: true,
 
     /**
-     * Ticks between checks, for both. Four times a second: a boundary, not a
+     * Ticks between player checks. Four times a second: a boundary, not a
      * tripwire.
      *
      * Ticks and not seconds, deliberately. Twenty to the second while the
@@ -442,9 +447,8 @@ export const CONFIG = {
      *
      * The spawn rule keeps a claim from filling itself; this is for the monster
      * that spawned in the dark somewhere else and came looking. It rides the
-     * same watch as the player rule above, on the same tick, because it is the
-     * same question — who is inside that should not be — and a creature is no
-     * more entitled to a warning first than a person is.
+     * loaded-entity watch below. A creature is no more entitled to a warning
+     * first than a person is.
      *
      * Waiting for it to attack was tried and dropped: by the time the game
      * reports a hit the thing is already at the door, and a boundary that
@@ -453,14 +457,10 @@ export const CONFIG = {
     pushOutCreatures: true,
 
     /**
-     * How far around the player to look, in blocks.
-     *
-     * Roughly what a player can see and be bothered by. Larger would reach
-     * across a claim they are standing at the edge of, and would also start
-     * paying for entities nobody is looking at, which is the cost this whole
-     * arrangement exists to avoid.
+     * Ticks between loaded-creature checks. This does not load chunks: the
+     * dimension query only observes entities the game is already simulating.
      */
-    creatureRadius: 24,
+    creatureEveryTicks: 10,
 
     /**
      * What a NEW claim says about each kind of creature.

@@ -8,9 +8,9 @@
 
 ## Checks
 
-- [ ] `python tools/check.py` passes
-- [ ] `node --experimental-vm-modules tools/stress.mjs` passes
-- [ ] `python tools/build.py` produces a package
+- [ ] `cargo fmt --all --check` passes
+- [ ] `cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic` passes
+- [ ] `cargo xtask all` passes
 - [ ] Tested in game, or explicitly not tested
 
 ## If it touches player-facing text

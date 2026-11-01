@@ -48,7 +48,7 @@ import { holdingTool } from "./items.js";
  */
 
 /**
- * playerId -> { dimension, corners: [...], closed }
+ * playerId -> { dimension, corners: [...], closed, editingClaimId? }
  *
  * A corner remembers where it was marked, the blocks that stand for it, and
  * what those blocks replaced, because every one of them has to be put back
@@ -64,6 +64,10 @@ export function cornersOf(player) {
 
 export function hasCorners(player) {
   return (selections.get(player.id)?.corners.length ?? 0) > 0;
+}
+
+export function editingClaimId(player) {
+  return selections.get(player.id)?.editingClaimId;
 }
 
 /**
@@ -291,6 +295,17 @@ export function clearCorner(player, index) {
 
   const dimension = world.getDimension(selection.dimension);
   forget(dimension, corner);
+
+  if (selection.editingPolygon && !selection.redrawing) {
+    const missing = selection.replacementIndexes ?? [];
+    let originalIndex = index;
+    for (const hole of missing) {
+      if (hole <= originalIndex) originalIndex++;
+    }
+    missing.push(originalIndex);
+    missing.sort((a, b) => a - b);
+    selection.replacementIndexes = missing;
+  }
   selection.corners.splice(index, 1);
   renumberLabels(selection);
 
@@ -298,8 +313,32 @@ export function clearCorner(player, index) {
   // the player agreed to.
   selection.closed = false;
 
-  if (selection.corners.length === 0) selections.delete(player.id);
+  // With fewer than two surviving vertices there are no neighbouring walls
+  // left to anchor an in-place replacement. This is now a full redraw.
+  if (selection.editingPolygon && selection.corners.length < 2) {
+    selection.editingPolygon = false;
+    selection.redrawing = true;
+    selection.replacementIndexes = [];
+  }
+
+  // An empty ordinary selection has no meaning. An edit session does: it keeps
+  // the target attached while the player redraws every point from scratch.
+  if (selection.corners.length === 0 && !selection.editingClaimId) selections.delete(player.id);
   else lightsFor(dimension, selection, player);
+}
+
+/** Removes all points while preserving the target of an active edit. */
+export function clearMarkedCorners(player) {
+  const selection = selections.get(player.id);
+  if (!selection) return;
+  const dimension = world.getDimension(selection.dimension);
+  for (const corner of selection.corners) forget(dimension, corner);
+  selection.corners = [];
+  selection.closed = false;
+  selection.editingPolygon = false;
+  selection.redrawing = true;
+  selection.replacementIndexes = [];
+  if (!selection.editingClaimId) selections.delete(player.id);
 }
 
 /** Clears every marker and forgets the selection. */
@@ -316,6 +355,61 @@ function freshSelection(player) {
   const selection = { dimension: player.dimension.id, corners: [], closed: false };
   selections.set(player.id, selection);
   return selection;
+}
+
+/**
+ * Loads an existing boundary into the same visible marker system used to draw
+ * a new one. Marker placement is transactional: if one point cannot be shown,
+ * every marker already staged is restored and no edit session is installed.
+ */
+export function loadClaimSelection(player, claim) {
+  if (!claim || claim.dimension !== player.dimension.id) return false;
+
+  const points = isPolygon(claim)
+    ? claim.points
+    : [{ x: claim.x1, z: claim.z1 }, { x: claim.x2, z: claim.z2 }];
+  if (points.length < 2 || points.length > CONFIG.selection.maxPoints) return false;
+
+  clearSelection(player);
+  const dimension = player.dimension;
+  const selection = {
+    dimension: dimension.id,
+    corners: [],
+    closed: points.length > 2,
+    editingClaimId: claim.id,
+    editingPolygon: points.length > 2,
+    redrawing: false,
+    replacementIndexes: [],
+  };
+  for (const point of points) {
+    const y = markerBaseY(dimension, point.x, point.z);
+    if (y === undefined) {
+      for (const corner of selection.corners) forget(dimension, corner);
+      return false;
+    }
+    if (addPoint(dimension, selection, { x: point.x, y, z: point.z }, player)) continue;
+    for (const corner of selection.corners) forget(dimension, corner);
+    return false;
+  }
+
+  selections.set(player.id, selection);
+  lightsFor(dimension, selection, player);
+  return true;
+}
+
+/** Highest loaded solid block in a column, within that dimension's bounds. */
+function markerBaseY(dimension, x, z) {
+  const [bottom, top] = dimension.id === "minecraft:nether"
+    ? [0, 127]
+    : dimension.id === "minecraft:the_end"
+    ? [0, 255]
+    : [-64, 319];
+  for (let y = top; y >= bottom; y--) {
+    const block = blockAt(dimension, { x, y, z });
+    if (!block) return undefined;
+    if (!block.isAir) return y;
+  }
+  return undefined;
 }
 
 /**
@@ -426,6 +520,22 @@ function addPoint(dimension, selection, location, player) {
   return true;
 }
 
+/** Places a replacement at its original polygon position. */
+function addPointAt(dimension, selection, index, location, player) {
+  const post = placePost(dimension, location, player);
+  if (!post) return false;
+  selection.corners.splice(index, 0, {
+    x: location.x,
+    y: location.y,
+    z: location.z,
+    post,
+    lights: [],
+    label: placeLabel(dimension, post, index + 1),
+  });
+  renumberLabels(selection);
+  return true;
+}
+
 /**
  * The run of blocks a wall covers between two marks.
  *
@@ -481,6 +591,12 @@ export function markCorner(player, location) {
     selection = undefined;
   }
 
+  // A loaded polygon is already closed. Clicking cannot guess which existing
+  // wall should move, so the player must clear the intended point first.
+  if (selection?.closed && selection.editingClaimId) {
+    return { corners: selection.corners.length, marked: false, closed: true };
+  }
+
   if (selection?.closed) {
     clearSelection(player);
     selection = undefined;
@@ -493,6 +609,45 @@ export function markCorner(player, location) {
 
   // Do not create even transient selection state until the click is allowed.
   if (!selection) selection = freshSelection(player);
+
+  // A removed vertex of a stored polygon is replaced in the same position,
+  // never appended to the end. Appending silently changes which vertices are
+  // neighbours and can redraw several walls the player never touched.
+  if (selection.replacementIndexes?.length) {
+    const originalIndex = selection.replacementIndexes[0];
+    const holesBefore = selection.replacementIndexes.filter(
+      (hole) => hole < originalIndex
+    ).length;
+    const index = originalIndex - holesBefore;
+    const previous = selection.corners[
+      (index - 1 + selection.corners.length) % selection.corners.length
+    ];
+    const next = selection.corners[index % selection.corners.length];
+    if (!isWall(previous, location) || !isWall(location, next)) {
+      return {
+        corners: selection.corners.length,
+        marked: false,
+        invalidReplacement: true,
+      };
+    }
+
+    const targetClaim = claimAt(player.dimension.id, location);
+    if (targetClaim && !mayDo(targetClaim, player, "place")) {
+      return { corners: selection.corners.length, marked: false, denied: targetClaim };
+    }
+    if (!addPointAt(player.dimension, selection, index, location, player)) {
+      return { corners: selection.corners.length, marked: false };
+    }
+    selection.replacementIndexes.shift();
+    selection.closed = selection.replacementIndexes.length === 0;
+    lightsFor(player.dimension, selection, player);
+    return {
+      corners: selection.corners.length,
+      marked: true,
+      replaced: true,
+      closed: selection.closed,
+    };
+  }
 
   /*
    * Clicking near where the path began closes it. Marking the exact block is

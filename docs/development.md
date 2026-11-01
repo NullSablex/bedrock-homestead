@@ -1,18 +1,18 @@
 # Development
 
 The add-on itself has no third-party runtime dependencies. Repository checks
-require Python 3.9 or newer and Node.js.
+require a stable Rust toolchain and Node.js.
 
 ## Verify a change
 
 ```bash
-python tools/check.py
-node --experimental-vm-modules tools/stress.mjs
-python tools/build.py --all
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic
+cargo xtask all
 ```
 
-The static checker validates manifests, translations, stored-data contracts and
-repository invariants. The deterministic stress suite loads the real add-on
+The Rust xtask validates manifests, translations, stored-data contracts and
+repository invariants. Its deterministic stress command loads the real add-on
 modules against a small Bedrock API mock and combines geometry, permissions,
 group conflicts, markers, inventory lifecycle and special use-on cases.
 

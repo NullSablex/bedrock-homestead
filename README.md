@@ -12,8 +12,8 @@
 
 Homestead lets players name and protect rectangular or custom-shaped areas.
 Owners decide who may enter, build, break, use doors, open containers and use
-working blocks. Explosions, unauthorized players and unwanted creatures are
-kept out by the same claim rules.
+working blocks. Explosions, unauthorized players, unwanted creatures and
+incoming projectiles are kept out by the same claim rules.
 
 Homestead targets Minecraft Bedrock **1.26 or newer**. Both the behavior pack
 and resource pack are required. Beta APIs and cheats are not required.
@@ -97,8 +97,20 @@ mounts, NPCs, items, paintings and item frames are never removed.
 
 The **Administration** option appears only for a player whose native Bedrock
 permission level is **Operator**. Custom player permissions and tags do not
-grant access. An operator can change the per-player claim count and total block
-budget from the menu; the defaults are 16 claims and 32,768 blocks.
+grant access. Operators can change the per-player claim count and total block
+budget, inspect player claims and jointly manage server-owned public claims.
+When an operator confirms a marked selection, the menu offers private or
+public ownership. Public claims can disable PvP for safe zones and maps, or
+apply a Safe zone, Arena or Community area preset from their management screen.
+
+Every claim always blocks arrows and thrown projectiles entering from outside.
+This protection is not configurable: incoming projectiles are reflected at the
+boundary instead of simply deleted.
+
+Any managed claim can be reshaped later with **Edit boundary**. Its current
+points are shown with the marking wand; the stored boundary is replaced only
+after the new shape passes every normal size, budget, gap and overlap check.
+Cancelling the marking leaves the original claim unchanged.
 
 ## Compatibility and safety
 
@@ -109,17 +121,18 @@ The Status screen reports which path is active.
 
 Claim storage is validated before it replaces the last known-good world data.
 Player-authored names are bounded and sanitized, invalid or crossed shapes are
-rejected, and visitor test mode uses the same enforcement as a real guest.
+rejected, and visitor test mode applies the same public rules as a real guest
+without changing the tester's actual access to other players' claims.
 
 ## Build and verify
 
-Python 3.9+ and Node.js are used by the repository checks; the add-on itself has
-no third-party runtime dependencies.
+Rust and Node.js are used by the repository checks; the add-on itself has no
+third-party runtime dependencies.
 
 ```bash
-python tools/check.py
-node --experimental-vm-modules tools/stress.mjs
-python tools/build.py --all
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic
+cargo xtask all
 ```
 
 The combined installer and separate server packs are written to `dist/`.

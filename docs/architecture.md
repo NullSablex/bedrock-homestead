@@ -70,9 +70,40 @@ also prevents two forms from racing for the same player. Controls introduced
 after server-ui 2.1.0, such as images and multi-button rows, are intentionally
 not used.
 
-World-wide settings use `Player.playerPermissionLevel` and accept exactly
-`PlayerPermissionLevel.Operator`. `Custom` is a separate native value and must
-not inherit operator access.
+World-wide settings reject `PlayerPermissionLevel.Custom` explicitly and accept
+the native `Operator` level. Bedrock can expose the player level late or throw
+while a player is joining, so `commandPermissionLevel` is used as an independent
+fallback and accepts the native operator threshold. A custom permission profile
+never inherits operator access through that fallback.
+
+Public claims use a reserved server owner id rather than the id of the operator
+who created them. This keeps them outside personal limits and lets every native
+operator manage the same record. The `public` marker is persisted explicitly;
+authorization never depends on a display name.
+
+## Projectile and PvP boundaries
+
+Projectile entities are registered from stable spawn and load events, then
+only that active set is observed each tick. A projectile is reflected only
+when its previous position was outside and its current position is inside, so
+one created within a claim is not mistaken for an incoming attack. Reflection
+uses the crossed rectangle or polygon edge and preserves vertical and
+tangential velocity.
+
+Public no-PvP uses the stable cancellable `entityHurt` before-event. Direct
+player damage and the player owner of a damaging projectile are recognized;
+environmental and creature damage are left unchanged. The rule is evaluated
+at the victim's public claim and never changes combat in private land.
+
+## Loaded-chunk presence
+
+Player entry is checked directly because online players are always simulated.
+Creature entry is checked once per relevant dimension against the entities in
+chunks Bedrock already has loaded. Denied claims are indexed by their chunk
+coordinates for that pass, so an entity is compared only with claims in its own
+chunk. The add-on does not create ticking areas or keep distant land loaded:
+entities in an unloaded chunk are frozen and are checked when simulation loads
+them again.
 
 ## Tool lifecycle
 

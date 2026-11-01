@@ -4,13 +4,14 @@ import {
 } from "@minecraft/server-ui";
 import { CONFIG } from "./config.js";
 import {
-  allClaims, claimsOf, claimAt, rectAround, usedBlocks,
-  createClaim, removeClaim, updateClaim, applyTrust, mayBuild, mayManage,
+  allClaims, claimsOf, publicClaims, playerClaims, claimAt, rectAround, usedBlocks,
+  createClaim, reshapeClaim, removeClaim, updateClaim, applyTrust, mayBuild, mayManage,
   isVisitor, setVisitor, cleanClaimName, claimNameAvailable,
+  isPublicClaim, claimOwnerName,
 } from "./claims.js";
 import {
-  clearSelection, clearCorner, cornersOf, hasCorners,
-  selectedShape, canClose, closePath,
+  clearSelection, clearMarkedCorners, clearCorner, cornersOf, hasCorners,
+  selectedShape, editingClaimId, loadClaimSelection, canClose, closePath,
 } from "./selection.js";
 import {
   giveWand, hasWand, putWandAway, removeWand, setMarkingScreen,
@@ -19,6 +20,7 @@ import { subscriptionFailures } from "./safe.js";
 import { sizeOf, areaOf } from "./shape.js";
 import { ACTIONS } from "./actions.js";
 import { mobRules, MOB_KINDS } from "./mobs.js";
+import { combatRules } from "./combat.js";
 import {
   guestFlags, explainFlags, overridesOf, memberOf,
 } from "./permissions.js";
@@ -30,6 +32,7 @@ import {
 import { t, join, raw } from "./msg.js";
 import { protectionLimits, saveProtectionLimits, LIMIT_BOUNDS } from "./settings.js";
 import { isOperator } from "./access.js";
+import { PUBLIC_PRESET_IDS, withPublicPreset } from "./public_presets.js";
 
 /**
  * The menu is built with DDUI CustomForm rather than the old static forms.
@@ -53,6 +56,20 @@ const MOB_KEYS = {
   hostile: "homestead.ui.mobs.hostile",
   animals: "homestead.ui.mobs.animals",
   villagers: "homestead.ui.mobs.villagers",
+};
+const PRESET_KEYS = {
+  safe: {
+    name: "homestead.ui.presets.safe",
+    body: "homestead.ui.presets.safe.body",
+  },
+  arena: {
+    name: "homestead.ui.presets.arena",
+    body: "homestead.ui.presets.arena.body",
+  },
+  community: {
+    name: "homestead.ui.presets.community",
+    body: "homestead.ui.presets.community.body",
+  },
 };
 
 function close(form) {
@@ -134,8 +151,13 @@ function whereAmI(player, here) {
     : t("homestead.ui.body.free");
 
   if (here.ownerId === player.id) return t("homestead.ui.body.mine", claimName(here));
+  if (isPublicClaim(here)) return join(
+    t("homestead.ui.body.public", claimName(here)),
+    raw(" "),
+    mayBuild(here, player) ? t("homestead.ui.build.allowed") : t("homestead.ui.build.blocked")
+  );
   return join(
-    t("homestead.ui.body.other", claimName(here), here.ownerName),
+    t("homestead.ui.body.other", claimName(here), claimOwnerName(here)),
     raw(" "),
     mayBuild(here, player) ? t("homestead.ui.build.allowed") : t("homestead.ui.build.blocked")
   );
@@ -164,8 +186,21 @@ export function showMenu(player) {
     actions.push({ label: t("homestead.ui.manage.here"), run: () => showClaim(player, here) });
   }
 
-  if (shape) {
-    actions.push({ label: t("homestead.ui.select.confirm"), run: () => confirmSelection(player, shape) });
+  const editId = editingClaimId(player);
+  if (shape && editId) {
+    actions.push({
+      label: t("homestead.ui.claim.edit.save"),
+      run: () => confirmSelection(player, shape, false),
+    });
+  } else if (shape) {
+    actions.push({
+      label: isOperator(player) ? t("homestead.ui.select.confirm.private") : t("homestead.ui.select.confirm"),
+      run: () => confirmSelection(player, shape, false),
+    });
+    if (isOperator(player)) actions.push({
+      label: t("homestead.ui.select.confirm.public"),
+      run: () => confirmSelection(player, shape, true),
+    });
   }
 
   actions.push({ label: t("homestead.ui.mine.title"), run: () => showMyClaims(player) });
@@ -198,15 +233,30 @@ function markedStatus(player, shape) {
   return t("homestead.ui.select.size", `${width}x${depth}`, areaOf(shape));
 }
 
-function confirmSelection(player, shape) {
-  const result = createClaim(player, player.dimension.id, shape);
+function confirmSelection(player, shape, publicArea) {
+  const editId = editingClaimId(player);
+  if (editId) {
+    const result = reshapeClaim(player, editId, player.dimension.id, shape);
+    if (!result.ok) return player.sendMessage(result.message);
+    clearSelection(player);
+    removeWand(player);
+    player.sendMessage(t("homestead.claim.edited", claimName(result.claim)));
+    return;
+  }
+
+  const result = createClaim(player, player.dimension.id, shape, undefined, { public: publicArea });
   if (!result.ok) return player.sendMessage(result.message);
 
   clearSelection(player);
   removeWand(player);
   const c = result.claim;
-  player.sendMessage(t("homestead.claim.created", claimName(c), `${c.x1}, ${c.z1}`, `${c.x2}, ${c.z2}`));
-  player.sendMessage(t("homestead.claim.created.hint"));
+  player.sendMessage(t(
+    publicArea ? "homestead.claim.created.public" : "homestead.claim.created",
+    claimName(c), `${c.x1}, ${c.z1}`, `${c.x2}, ${c.z2}`
+  ));
+  player.sendMessage(t(publicArea
+    ? "homestead.claim.created.public.hint"
+    : "homestead.claim.created.hint"));
 }
 
 export function showMarking(player) {
@@ -222,10 +272,22 @@ export function showMarking(player) {
         : t("homestead.ui.wand.body.open", walls);
 
   const actions = [];
-  if (shape) actions.push({
-    label: t("homestead.ui.select.confirm"),
-    run: () => confirmSelection(player, shape),
-  });
+  const editId = editingClaimId(player);
+  if (shape && editId) {
+    actions.push({
+      label: t("homestead.ui.claim.edit.save"),
+      run: () => confirmSelection(player, shape, false),
+    });
+  } else if (shape) {
+    actions.push({
+      label: isOperator(player) ? t("homestead.ui.select.confirm.private") : t("homestead.ui.select.confirm"),
+      run: () => confirmSelection(player, shape, false),
+    });
+    if (isOperator(player)) actions.push({
+      label: t("homestead.ui.select.confirm.public"),
+      run: () => confirmSelection(player, shape, true),
+    });
+  }
 
   if (canClose(player)) actions.push({
     label: t("homestead.ui.wand.close"),
@@ -252,7 +314,7 @@ export function showMarking(player) {
   if (corners.length > 1) actions.push({
     label: t("homestead.ui.wand.clear.all"),
     run: () => {
-      clearSelection(player);
+      clearMarkedCorners(player);
       player.sendMessage(t("homestead.select.cleared"));
       showMarking(player);
     },
@@ -297,6 +359,45 @@ function showMyClaims(player) {
   present(player, t("homestead.ui.mine.title"), status, actions);
 }
 
+function showClaimHome(player, claim) {
+  if (isPublicClaim(claim) && isOperator(player)) return showPublicClaims(player);
+  if (claim.ownerId === player.id) return showMyClaims(player);
+  if (isOperator(player)) return showPlayerClaims(player);
+  return showMenu(player);
+}
+
+function showPublicClaims(player) {
+  if (!isOperator(player)) return showMenu(player);
+  const list = publicClaims();
+  const actions = list.map((claim) => ({
+    label: claimButton(claim),
+    run: () => showClaim(player, claim),
+  }));
+  actions.push({ label: t("homestead.ui.back"), run: () => showAdmin(player) });
+  present(
+    player,
+    t("homestead.ui.admin.public"),
+    list.length ? t("homestead.admin.public.count", list.length) : t("homestead.ui.admin.public.empty"),
+    actions
+  );
+}
+
+function showPlayerClaims(player) {
+  if (!isOperator(player)) return showMenu(player);
+  const list = playerClaims();
+  const actions = list.map((claim) => ({
+    label: join(claimName(claim), raw(` | ${claim.ownerName}`)),
+    run: () => showClaim(player, claim),
+  }));
+  actions.push({ label: t("homestead.ui.back"), run: () => showAdmin(player) });
+  present(
+    player,
+    t("homestead.ui.admin.players"),
+    list.length ? t("homestead.admin.players.count", list.length) : t("homestead.ui.admin.players.empty"),
+    actions
+  );
+}
+
 function showClaim(player, claim) {
   if (!canManageNow(player, claim)) return;
   const { width, depth } = sizeOf(claim);
@@ -311,8 +412,9 @@ function showClaim(player, claim) {
     t("homestead.info.size.short", `${width}x${depth}`)
   );
 
-  present(player, claimName(claim), status, [
+  const actions = [
     { label: t("homestead.ui.claim.rename"), run: () => showRenameClaim(player, claim) },
+    { label: t("homestead.ui.claim.edit"), run: () => beginClaimEdit(player, claim) },
     { label: join(t("homestead.ui.people.title"), raw(` (${claim.members.length})`)), run: () => showPeople(player, claim) },
     { label: join(t("homestead.ui.rules.title"), raw(` (${open}/${ACTIONS.length})`)), run: () => showClaimRules(player, claim) },
     {
@@ -321,9 +423,75 @@ function showClaim(player, claim) {
         : t("homestead.ui.mobs.title"),
       run: () => showMobRules(player, claim),
     },
+  ];
+  if (isPublicClaim(claim)) actions.push({
+    label: t("homestead.ui.presets.title"),
+    run: () => showPublicPresets(player, claim),
+  });
+  if (isPublicClaim(claim)) actions.push({
+    label: combatRules(claim).allowPvp
+      ? t("homestead.ui.combat.pvp.allowed")
+      : t("homestead.ui.combat.pvp.blocked"),
+    run: () => showCombatRules(player, claim),
+  });
+  actions.push(
     { label: join(t("homestead.ui.groups.title"), raw(` (${groupsOf(claim.ownerId).length})`)), run: () => showGroups(player, claim) },
     { label: t("homestead.ui.remove.title"), run: () => confirmRemoval(player, claim) },
-    { label: t("homestead.ui.back"), run: () => showMyClaims(player) },
+    { label: t("homestead.ui.back"), run: () => showClaimHome(player, claim) }
+  );
+  present(player, claimName(claim), status, actions);
+}
+
+function beginClaimEdit(player, claim) {
+  if (!canManageNow(player, claim)) return;
+  if (claim.dimension !== player.dimension.id) {
+    player.sendMessage(t("homestead.claim.edit.dimension"));
+    return;
+  }
+  if (!loadClaimSelection(player, claim)) {
+    player.sendMessage(t("homestead.claim.edit.markers"));
+    return;
+  }
+  giveWand(player);
+  player.sendMessage(t("homestead.claim.edit.started", claimName(claim)));
+  showMarking(player);
+}
+
+function showPublicPresets(player, claim) {
+  if (!canManageNow(player, claim) || !isPublicClaim(claim)) return;
+  const actions = PUBLIC_PRESET_IDS.map((id) => ({
+    label: t(PRESET_KEYS[id].name),
+    run: () => confirmPublicPreset(player, claim, id),
+  }));
+  actions.push({ label: t("homestead.ui.back"), run: () => showClaim(player, claim) });
+  present(
+    player,
+    t("homestead.ui.presets.title"),
+    t("homestead.ui.presets.body"),
+    actions
+  );
+}
+
+function confirmPublicPreset(player, claim, id) {
+  if (!canManageNow(player, claim) || !isPublicClaim(claim)) return;
+  const keys = PRESET_KEYS[id];
+  if (!keys) return;
+  present(player, t(keys.name), t(keys.body), [
+    {
+      label: t("homestead.ui.presets.apply"),
+      run: () => {
+        const current = allClaims().find((entry) => entry.id === claim.id);
+        if (!current || !canManageNow(player, current) || !isPublicClaim(current)) return;
+        const changed = withPublicPreset(current, id);
+        if (!changed || !updateClaim(changed)) {
+          player.sendMessage(t("homestead.storage.failed"));
+          return;
+        }
+        player.sendMessage(t("homestead.presets.saved"));
+        showClaim(player, changed);
+      },
+    },
+    { label: t("homestead.ui.back"), run: () => showPublicPresets(player, claim) },
   ]);
 }
 
@@ -450,6 +618,26 @@ function showMobRules(player, claim) {
       : everywhere.getData()
       ? t("homestead.mobs.saved.all", targets.length)
       : t("homestead.mobs.saved"));
+    showClaim(player, claim);
+  });
+  backButton(form, () => showClaim(player, claim));
+  show(form);
+}
+
+function showCombatRules(player, claim) {
+  if (!canManageNow(player, claim) || !isPublicClaim(claim)) return;
+  const allowPvp = bool(combatRules(claim).allowPvp);
+  const form = new CustomForm(player, t("homestead.ui.combat.title"));
+  form.toggle(t("homestead.ui.combat.pvp"), allowPvp, {
+    description: t("homestead.ui.combat.pvp.hint"),
+  });
+  form.divider();
+  saveButton(form, () => {
+    if (!canManageNow(player, claim) || !isPublicClaim(claim)) return;
+    claim.combat = { allowPvp: allowPvp.getData() };
+    player.sendMessage(updateClaim(claim)
+      ? t("homestead.combat.saved")
+      : t("homestead.storage.failed"));
     showClaim(player, claim);
   });
   backButton(form, () => showClaim(player, claim));
@@ -827,7 +1015,7 @@ function confirmGroupRemoval(player, claim, group) {
         player.sendMessage(deleteGroup(claim.ownerId, group.id, claimsOf(claim.ownerId), updateClaim)
           ? t("homestead.group.deleted", group.name)
           : t("homestead.storage.failed"));
-        showMyClaims(player);
+        showClaim(player, claim);
       },
     },
     { label: t("homestead.ui.cancel"), run: () => showGroup(player, claim, group) },
@@ -839,19 +1027,23 @@ function showAdmin(player) {
     player.sendMessage(t("homestead.manage.denied"));
     return showMenu(player);
   }
-  const list = allClaims();
+  const privateCount = playerClaims().length;
+  const publicCount = publicClaims().length;
   const actions = [{
     label: t("homestead.ui.admin.settings"),
     run: () => showAdminSettings(player),
-  }, ...list.map((claim) => ({
-    label: join(claimName(claim), raw(` | ${claim.ownerName}`)),
-    run: () => showClaim(player, claim),
-  }))];
+  }, {
+    label: join(t("homestead.ui.admin.public"), raw(` (${publicCount})`)),
+    run: () => showPublicClaims(player),
+  }, {
+    label: join(t("homestead.ui.admin.players"), raw(` (${privateCount})`)),
+    run: () => showPlayerClaims(player),
+  }];
   actions.push({ label: t("homestead.ui.back"), run: () => showMenu(player) });
   present(
     player,
     t("homestead.ui.admin.title"),
-    list.length ? t("homestead.admin.all", list.length) : t("homestead.ui.admin.empty"),
+    t("homestead.admin.summary", publicCount, privateCount),
     actions
   );
 }

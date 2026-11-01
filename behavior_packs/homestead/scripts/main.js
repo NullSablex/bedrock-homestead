@@ -5,6 +5,8 @@ import { registerDeed } from "./deed.js";
 import { registerSelection } from "./selection.js";
 import { registerWand } from "./wand.js";
 import { registerPresence } from "./presence.js";
+import { registerProjectiles } from "./projectiles.js";
+import { registerCombat } from "./combat.js";
 
 /*
  * Three pieces: the protection, which runs whether anyone is looking; the deed,
@@ -21,6 +23,8 @@ registerDeed();
 registerSelection();
 registerWand();
 registerPresence();
+registerProjectiles();
+registerCombat();
 
 subscribeSafe(world.afterEvents, "worldLoad", () => {
   console.warn("[Homestead] active");
