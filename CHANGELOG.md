@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0-beta.1 - 2026-11-01
+## 1.1.0-beta.1 - 2026-11-08
 
 - Server-owned public claims jointly managed by native operators.
 - Optional no-PvP rules and mandatory reflection of incoming projectiles.
