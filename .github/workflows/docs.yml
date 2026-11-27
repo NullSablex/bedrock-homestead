@@ -5,14 +5,14 @@ on:
     branches: [master]
     paths:
       - docs/**
-      - mkdocs.yml
+      - zensical.toml
       - requirements-docs.in
       - requirements-docs.txt
       - .github/workflows/docs.yml
   pull_request:
     paths:
       - docs/**
-      - mkdocs.yml
+      - zensical.toml
       - requirements-docs.in
       - requirements-docs.txt
   workflow_dispatch:
@@ -40,32 +40,15 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-docs.txt
 
-      # Material's social plugin renders the link preview cards with cairo,
-      # which is a C library rather than a wheel. Without these the build fails
-      # at import time with a message about libcairo that says nothing useful.
-      - name: Install cairo and font libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends             libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev
-
       # requirements-docs.txt is a lockfile with hashes, generated from
       # requirements-docs.in by pip-compile. pip verifies every hash, so a
       # tampered or substituted package fails the build instead of shipping.
       - name: Install locked docs toolchain
         run: pip install --require-hashes -r requirements-docs.txt
 
-      # The social plugin re-renders every card on a cold cache, which is the
-      # slowest part of the build by far. Keyed on the config and the theme
-      # version, since those are what change a card's appearance.
-      - name: Cache social cards
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache
-          key: social-${{ hashFiles('mkdocs.yml', 'requirements-docs.txt') }}
-
       # --strict turns a broken internal link into a failed build.
       - name: Build site
-        run: mkdocs build --strict
+        run: zensical build --strict
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

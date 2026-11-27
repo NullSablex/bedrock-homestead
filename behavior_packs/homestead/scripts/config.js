@@ -132,7 +132,6 @@ export const CONFIG = {
       remove: "textures/ui/trash",
       admin: "textures/ui/op",
       status: "textures/ui/debug_glyph_color",
-      visitor: "textures/ui/permissions_visitor_hand",
       wand: "textures/items/stick",
       mode: "textures/ui/gear",
       rules: "textures/ui/permissions_op_crown",
@@ -165,7 +164,7 @@ export const CONFIG = {
   credits: {
     name: "Homestead",
     author: "NullSablex",
-    version: "1.1.0-beta.1",
+    version: "1.1.0-beta.2",
     license: "MPL-2.0",
     /**
      * Two forms of the same address, because two surfaces have two widths. A

@@ -15,9 +15,11 @@ An owner can separately allow or deny:
 
 Explosions cannot damage protected blocks. A visitor who loses access while
 inside a claim is moved to a safe position outside it instead of becoming
-trapped at the border. Every claim always reflects arrows and throwable
-projectiles that cross its boundary from outside; this protection cannot be
-disabled per area.
+trapped at the border. By default every claim reflects arrows and
+throwable projectiles that are about to cross its boundary from outside,
+including fast ones that would cross a narrow claim within a single tick.
+Projectiles shot by players who may build in the area are not reflected. The
+owner can turn ricochet off per area in the **Projectiles** option.
 
 ## People and groups
 
@@ -49,9 +51,7 @@ lobbies and multiplayer maps. Safe zone, Arena and Community area presets
 configure common combinations of visitor and PvP rules after an operator
 confirms the replacement.
 
-The **Test as visitor** option temporarily applies each owner's own public
-visitor permissions to them. It does not change their real access to areas
-owned by other players. The Status screen reports whether protection is active
+The Status screen reports whether protection is active
 and which block-placement enforcement path the current game provides.
 
 ## Player tools

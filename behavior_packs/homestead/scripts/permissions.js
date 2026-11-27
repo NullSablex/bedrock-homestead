@@ -119,15 +119,12 @@ export function memberOf(claim, playerId) {
 /**
  * May this player take this action here?
  *
- * The order is the interesting part. Visitor mode comes before ownership and
- * native operator access because it previews exactly what an unknown public
- * visitor may do. Ownership comes before the ordinary flags because a claim
- * that could lock out its own owner is a trap outside that explicit preview.
+ * Ownership and native operator access come before the ordinary flags, because
+ * a claim that could lock out its own owner or the server staff is a trap.
  */
-export function may(claim, player, action, isVisitor) {
+export function may(claim, player, action) {
   if (!ACTIONS.includes(action)) return false;
   if (!claim) return true;
-  if (isVisitor) return guestFlags(claim)[action];
   if (isOperator(player)) return true;
   if (claim.ownerId === player.id) return true;
 

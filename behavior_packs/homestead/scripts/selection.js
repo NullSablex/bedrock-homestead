@@ -1,6 +1,7 @@
 import { system, world } from "@minecraft/server";
 import { CONFIG } from "./config.js";
 import { subscribeSafe } from "./safe.js";
+import { loadForWrite, save } from "./store.js";
 import { allClaims, claimAt, mayDo } from "./claims.js";
 import { shapeFrom, isPolygon } from "./shape.js";
 import { holdingTool } from "./items.js";
@@ -174,6 +175,56 @@ function blockAt(dimension, location) {
   }
 }
 
+/**
+ * Every marker block standing in the world, persisted.
+ *
+ * Selections live in memory, but their markers are real blocks. A script
+ * reload, a crash or a server stop with a marking open used to leave them on
+ * the map for good. The next load removes whatever this list still names, as
+ * long as the block is still the one written.
+ */
+const MARKERS_KEY = "homestead:markers";
+const markersEmpty = () => [];
+const markersValid = (value) => Array.isArray(value);
+
+function markerId(dimensionId, at) {
+  return `${dimensionId}|${at.x},${at.y},${at.z}`;
+}
+
+function recordMarker(dimensionId, placed, present) {
+  const list = loadForWrite(MARKERS_KEY, markersEmpty, markersValid);
+  if (!list) return;
+  const id = markerId(dimensionId, placed.at);
+  const kept = list.filter((entry) => entry.id !== id);
+  if (present) kept.push({ id, dimension: dimensionId, at: placed.at, typeId: placed.typeId });
+  if (present || kept.length !== list.length) save(MARKERS_KEY, kept);
+}
+
+/** Removes markers left by an earlier script instance. */
+function sweepOrphanMarkers() {
+  const list = loadForWrite(MARKERS_KEY, markersEmpty, markersValid);
+  if (!list?.length) return;
+  const pending = [];
+  for (const entry of list) {
+    let block;
+    try {
+      block = world.getDimension(entry.dimension).getBlock(entry.at);
+    } catch { /* dimension unavailable */ }
+    // Not loaded: try again on the next load rather than forget it.
+    if (!block) {
+      pending.push(entry);
+      continue;
+    }
+    if (block.typeId !== entry.typeId) continue;
+    try {
+      block.setType("minecraft:air");
+    } catch {
+      pending.push(entry);
+    }
+  }
+  save(MARKERS_KEY, pending);
+}
+
 /** Writes a block and proves it landed, remembering what it replaced. */
 function put(dimension, at, typeId) {
   const block = blockAt(dimension, at);
@@ -195,12 +246,15 @@ function put(dimension, at, typeId) {
   // refusal as an error, and silence was the worst property of this code.
   if (blockAt(dimension, at)?.typeId !== typeId) return undefined;
 
-  return { at, typeId, original: wasAir ? undefined : original };
+  const placed = { at, typeId, original: wasAir ? undefined : original };
+  recordMarker(dimension.id, placed, true);
+  return placed;
 }
 
 /** Takes one placed block away, but only while it is still the one we wrote. */
 function undo(dimension, placed) {
   if (!placed) return;
+  recordMarker(dimension.id, placed, false);
   const block = blockAt(dimension, placed.at);
   if (!block || block.typeId !== placed.typeId) return;
 
@@ -964,6 +1018,7 @@ export function registerSelection() {
   // A script reload forgets its in-memory selections. Remove any nameplates
   // left by the previous instance instead of letting them become permanent.
   subscribeSafe(world.afterEvents, "worldLoad", () => {
+    sweepOrphanMarkers();
     for (const id of ["minecraft:overworld", "minecraft:nether", "minecraft:the_end"]) {
       try {
         for (const label of world.getDimension(id).getEntities({ type: LABEL_TYPE })) label.remove();

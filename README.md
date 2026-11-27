@@ -119,10 +119,13 @@ Homestead uses stable `@minecraft/server` **2.9.0** and
 unavailable, refused placements are immediately undone and the item is returned.
 The Status screen reports which path is active.
 
-Claim storage is validated before it replaces the last known-good world data.
+Area and group data are split across several world properties, so the
+registry is not capped by a single property's size, and a write that fails
+half-way leaves the previous data in force. Data that exists but cannot be
+read is never overwritten: saving is locked and the Status screen says so.
+Each screen saves only the settings it changed.
 Player-authored names are bounded and sanitized, invalid or crossed shapes are
-rejected, and visitor test mode applies the same public rules as a real guest
-without changing the tester's actual access to other players' claims.
+rejected.
 
 ## Build and verify
 

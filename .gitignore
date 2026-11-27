@@ -2,7 +2,7 @@
 dist/
 target/
 
-# MkDocs output
+# Documentation site output
 site/
 
 # Python

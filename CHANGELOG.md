@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0-beta.2 - 2026-11-26
+
+- Projectile ricochet can be turned off per area and stays on by default.
+- Projectiles are reflected before they reach the boundary, including fast ones
+  that would cross a narrow area within one tick.
+- Projectiles shot by players who may build in an area are not reflected.
+- Visitor test mode removed.
+- Area and group data that cannot be read are no longer overwritten; saving is
+  locked and the Status screen reports it.
+- Area and group data are split across several world properties, removing the
+  size cap.
+- Each screen saves only the settings it changed, so concurrent edits no longer
+  undo each other.
+- Creatures are no longer pushed into a neighbouring area that also refuses
+  them, and area height limits apply to creature removal.
+- Marking blocks left behind by a reload or crash are removed on the next load.
+- Documentation site built with Zensical instead of MkDocs.
+
 ## 1.1.0-beta.1 - 2026-11-01
 
 - Server-owned public claims jointly managed by native operators.

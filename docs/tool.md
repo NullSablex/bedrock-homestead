@@ -66,5 +66,6 @@ Public areas also offer a PvP switch and can be managed by every native
 operator. Their **Public presets** option applies one of three confirmed rule
 sets: Safe zone blocks PvP, Arena allows it, and Community area keeps it
 disabled while allowing ordinary public interaction. All three keep
-construction restricted. Incoming projectiles always ricochet in every area,
-independently of presets.
+construction restricted. Ricochet of incoming projectiles is on by default
+in every area, private or public, independently of presets, and can be
+turned off in the area's **Projectiles** option.

@@ -33,6 +33,8 @@ homestead.untrust.absent=§8[§aHomestead§8] §7%s não estava autorizado.
 homestead.untrust.done=§8[§aHomestead§8] §7§f%s§7 não pode mais construir lá.
 homestead.deed.received=§8[§aHomestead§8] §7Você recebeu a escritura. Use-a para abrir o menu de áreas.
 homestead.storage.failed=§8[§aHomestead§8] §7§cNão foi possível salvar. Nenhuma mudança foi confirmada; veja o log de conteúdo.
+homestead.storage.locked=§8[§aHomestead§8] §7§cOs dados das áreas não puderam ser lidos. Nada será gravado para não apagá-los; avise um operador.
+homestead.ui.status.locked=§cDados das áreas ilegíveis: gravação bloqueada para preservá-los. Veja o log do servidor.
 homestead.manage.denied=§8[§aHomestead§8] §7§cVocê não tem mais permissão para gerenciar esta área.
 
 ## Protection --------------------------------------------------------------
@@ -146,14 +148,6 @@ homestead.ui.status.ok=§aProteção ativa
 homestead.ui.status.failed=§cProteção incompleta (%s falhas)
 homestead.ui.status.claims=%s áreas carregadas
 homestead.ui.status.compatible=O modo estável de compatibilidade está ativo. Não é preciso habilitar recursos experimentais.
-homestead.ui.visitor.header=Teste a proteção
-homestead.ui.visitor.body.off=Modo visitante: desligado. Teste suas áreas como outro jogador.
-homestead.ui.visitor.body.on=Modo visitante: ligado. Suas áreas tratam você como outro jogador.
-homestead.ui.visitor.on=Testar como visitante
-homestead.ui.visitor.off=Parar de testar como visitante
-homestead.ui.visitor.warn=§eVocê está sendo tratado como estranho nas suas próprias áreas.
-homestead.visitor.on=§8[§aHomestead§8] §7§eTeste de visitante ligado: suas áreas aplicam a você as permissões públicas de visitante. Abra o menu para desligar.
-homestead.visitor.off=§8[§aHomestead§8] §7§aTeste de visitante desligado. Suas áreas voltam a te obedecer.
 homestead.ui.trust.title=Autorizar jogador
 homestead.ui.untrust.title=Revogar acesso
 homestead.ui.nobody.online=§8[§aHomestead§8] §7§cNão há outro jogador online para autorizar.
@@ -185,6 +179,14 @@ homestead.ui.combat.pvp.allowed=PvP: permitido
 homestead.ui.combat.pvp.blocked=PvP: bloqueado
 homestead.ui.combat.pvp.hint=Desligado impede dano entre jogadores nesta área pública.
 homestead.combat.saved=§8[§aHomestead§8] §7§aRegra de combate salva.
+
+## Projéteis ---------------------------------------------------------------
+homestead.ui.projectiles.title=Projéteis
+homestead.ui.projectiles.reflect=Ricochetear projéteis de fora
+homestead.ui.projectiles.on=Ricochete: ligado
+homestead.ui.projectiles.off=Ricochete: desligado
+homestead.ui.projectiles.hint=Ligado, flechas e itens arremessados de fora voltam ao tocar a borda. Quem pode construir aqui nunca é rebatido.
+homestead.projectiles.saved=§8[§aHomestead§8] §7§aRegra de projéteis salva.
 
 ## Credits -----------------------------------------------------------------
 homestead.credits.title=Sobre

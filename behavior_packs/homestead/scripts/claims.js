@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server";
+import { load, loadForWrite, save, isBroken } from "./store.js";
 import { CONFIG } from "./config.js";
 import { t } from "./msg.js";
 import { contains, areaOf, sizeOf, conflicts, shapeFrom, isValidShape } from "./shape.js";
@@ -21,28 +21,26 @@ import { isOperator } from "./access.js";
 const KEY = "homestead:areas";
 export const PUBLIC_OWNER_ID = "homestead:public";
 
+const empty = () => [];
+const valid = (value) => Array.isArray(value);
+
+/** Shared and read-only: every lookup goes through here, every tick. */
 function readAll() {
-  try {
-    const raw = world.getDynamicProperty(KEY);
-    if (typeof raw !== "string" || !raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // Starting empty loses claims, but refusing to load loses the whole
-    // add-on. The log line is the only trace either way.
-    console.warn("[Homestead] registry unreadable, starting empty");
-    return [];
-  }
+  return load(KEY, empty, valid);
+}
+
+/** A private copy for a change, or nothing while the registry is locked. */
+function readForWrite() {
+  return loadForWrite(KEY, empty, valid);
 }
 
 function writeAll(list) {
-  try {
-    world.setDynamicProperty(KEY, JSON.stringify(list));
-    return true;
-  } catch (e) {
-    console.warn("[Homestead] could not write the registry: " + e);
-    return false;
-  }
+  return save(KEY, list);
+}
+
+/** True when stored areas exist but could not be read; nothing is written then. */
+export function registryLocked() {
+  return isBroken(KEY, empty, valid);
 }
 
 export function allClaims() {
@@ -201,7 +199,8 @@ function geometryProblem(list, dimensionId, shape, options) {
  * refusal that only says no leaves the player guessing how much smaller to try.
  */
 export function createClaim(player, dimensionId, shape, requestedName, options = {}) {
-  const list = readAll();
+  const list = readForWrite();
+  if (!list) return { ok: false, message: t("homestead.storage.locked") };
   const limits = protectionLimits();
   const publicArea = options.public === true;
   if (publicArea && !isOperator(player)) {
@@ -268,7 +267,8 @@ export function createClaim(player, dimensionId, shape, requestedName, options =
  * back to its owner. A rejected edit leaves the original record untouched.
  */
 export function reshapeClaim(player, id, dimensionId, shape) {
-  const list = readAll();
+  const list = readForWrite();
+  if (!list) return { ok: false, message: t("homestead.storage.locked") };
   const index = list.findIndex((claim) => claim.id === id);
   if (index < 0) return { ok: false, message: t("homestead.claim.missing") };
 
@@ -308,60 +308,37 @@ export function reshapeClaim(player, id, dimensionId, shape) {
 }
 
 export function removeClaim(id) {
-  const list = readAll();
+  const list = readForWrite();
+  if (!list) return false;
   const i = list.findIndex((c) => c.id === id);
   if (i < 0) return false;
   list.splice(i, 1);
   return writeAll(list);
 }
 
-export function updateClaim(claim) {
-  const list = readAll();
-  const i = list.findIndex((c) => c.id === claim.id);
-  if (i < 0) return false;
-  list[i] = claim;
+/**
+ * Writes only the named top-level fields of `claim` onto the stored record.
+ *
+ * Screens keep the record they opened with. Writing the whole of it back
+ * undid whatever changed meanwhile: an operator saving PvP on a public area
+ * restored the old boundary another operator had just redrawn.
+ */
+export function updateClaim(claim, fields) {
+  if (!Array.isArray(fields) || !fields.length) throw new Error("updateClaim needs the fields it changes");
+  const list = readForWrite();
+  if (!list) return false;
+  const stored = list.find((c) => c.id === claim.id);
+  if (!stored) return false;
+  for (const field of fields) {
+    if (claim[field] === undefined) delete stored[field];
+    else stored[field] = JSON.parse(JSON.stringify(claim[field]));
+  }
   return writeAll(list);
 }
 
-/**
- * Players who have asked to preview stranger permissions in their own claims.
- *
- * A single player cannot otherwise test their own protection: they own the
- * land, so every rule says yes, and the only way to see a refusal is to find a
- * second person. The preview applies the public flags of only their own land;
- * real access to anybody else's claim remains unchanged.
- *
- * Deliberately not persisted. Left on by accident it locks someone out of
- * their own base, and a flag that survives a relog is a flag nobody remembers
- * turning on.
- */
-const visitors = new Set();
-
-export function isVisitor(player) {
-  return visitors.has(player.id);
-}
-
-export function setVisitor(player, on) {
-  if (on) visitors.add(player.id);
-  else visitors.delete(player.id);
-}
-
-export function forgetVisitor(playerId) {
-  visitors.delete(playerId);
-}
-
-/**
- * May this player take this action here?
- *
- * The rules themselves live in permissions.js; this is where the visitor test
- * is folded in, because that state belongs to the session and not to the land.
- */
+/** May this player take this action here? The rules live in permissions.js. */
 export function mayDo(claim, player, action) {
-  // The test previews the public rules of the player's own land. Applying it
-  // to every claim would change their real memberships elsewhere and could
-  // turn a harmless preview into an actual entry lockout.
-  const testingOwnClaim = visitors.has(player.id) && claim?.ownerId === player.id;
-  return may(claim, player, action, testingOwnClaim);
+  return may(claim, player, action);
 }
 
 /** Shorthand for the commonest question: may they change the blocks here? */
@@ -402,7 +379,7 @@ export function applyTrust(player, claim, target, add, grant = { full: true }) {
     if (!has) return player.sendMessage(t("homestead.untrust.absent", target.name));
     claim.members = claim.members.filter((m) => m.id !== target.id);
   }
-  if (!updateClaim(claim)) return player.sendMessage(t("homestead.storage.failed"));
+  if (!updateClaim(claim, ["members"])) return player.sendMessage(t("homestead.storage.failed"));
   if (add) {
     player.sendMessage(t("homestead.trust.added", target.name));
     target.sendMessage(t("homestead.trust.notified", player.name));

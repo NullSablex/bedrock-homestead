@@ -17,6 +17,4 @@ Keep messages short: Bedrock forms have fixed widths and long text wraps or is
 clipped. The project checks its supported character range because some
 decorative Unicode characters do not render consistently in Minecraft's font.
 
-Documentation translations use MkDocs suffix files, for example
-`docs/index.pt-BR.md`. A page without a translated version falls back to its
-English source.
+The documentation site is written in English only for now.

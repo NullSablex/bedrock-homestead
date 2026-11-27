@@ -6,7 +6,7 @@ import { CONFIG } from "./config.js";
 import {
   allClaims, claimsOf, publicClaims, playerClaims, claimAt, rectAround, usedBlocks,
   createClaim, reshapeClaim, removeClaim, updateClaim, applyTrust, mayBuild, mayManage,
-  isVisitor, setVisitor, cleanClaimName, claimNameAvailable,
+  cleanClaimName, claimNameAvailable, registryLocked,
   isPublicClaim, claimOwnerName,
 } from "./claims.js";
 import {
@@ -21,6 +21,7 @@ import { sizeOf, areaOf } from "./shape.js";
 import { ACTIONS } from "./actions.js";
 import { mobRules, MOB_KINDS } from "./mobs.js";
 import { combatRules } from "./combat.js";
+import { reflectsProjectiles } from "./projectiles.js";
 import {
   guestFlags, explainFlags, overridesOf, memberOf,
 } from "./permissions.js";
@@ -423,6 +424,12 @@ function showClaim(player, claim) {
         : t("homestead.ui.mobs.title"),
       run: () => showMobRules(player, claim),
     },
+    {
+      label: reflectsProjectiles(claim)
+        ? t("homestead.ui.projectiles.on")
+        : t("homestead.ui.projectiles.off"),
+      run: () => showProjectileRules(player, claim),
+    },
   ];
   if (isPublicClaim(claim)) actions.push({
     label: t("homestead.ui.presets.title"),
@@ -483,7 +490,7 @@ function confirmPublicPreset(player, claim, id) {
         const current = allClaims().find((entry) => entry.id === claim.id);
         if (!current || !canManageNow(player, current) || !isPublicClaim(current)) return;
         const changed = withPublicPreset(current, id);
-        if (!changed || !updateClaim(changed)) {
+        if (!changed || !updateClaim(changed, ["guests", "combat"])) {
           player.sendMessage(t("homestead.storage.failed"));
           return;
         }
@@ -515,7 +522,7 @@ function showRenameClaim(player, claim) {
     }
     const previous = claim.name;
     claim.name = saved;
-    if (!updateClaim(claim)) {
+    if (!updateClaim(claim, ["name"])) {
       claim.name = previous;
       player.sendMessage(t("homestead.storage.failed"));
       return showClaim(player, claim);
@@ -555,19 +562,12 @@ function resolveTarget(member) {
 
 function showStatus(player) {
   const failures = subscriptionFailures();
-  const visiting = isVisitor(player);
   const form = new CustomForm(player, t("homestead.ui.status.title"));
   form.label(failures.length
     ? t("homestead.ui.status.failed", failures.length)
     : t("homestead.ui.status.ok"));
   form.label(t("homestead.ui.status.claims", allClaims().length));
-  form.divider();
-  form.label(t(visiting ? "homestead.ui.visitor.body.on" : "homestead.ui.visitor.body.off"));
-  addButton(form, visiting ? t("homestead.ui.visitor.off") : t("homestead.ui.visitor.on"), () => {
-    setVisitor(player, !visiting);
-    player.sendMessage(visiting ? t("homestead.visitor.off") : t("homestead.visitor.on"));
-    showStatus(player);
-  });
+  if (registryLocked()) form.label(t("homestead.ui.status.locked"));
   backButton(form, () => showMenu(player));
   show(form);
 }
@@ -580,8 +580,9 @@ function showClaimRules(player, claim) {
   for (const action of ACTIONS) form.toggle(t(PERMISSION_KEYS[action]), values[action]);
   form.divider();
   saveButton(form, () => {
+    if (!canManageNow(player, claim)) return;
     claim.guests = Object.fromEntries(ACTIONS.map((action) => [action, values[action].getData()]));
-    player.sendMessage(updateClaim(claim)
+    player.sendMessage(updateClaim(claim, ["guests"])
       ? t("homestead.rules.saved")
       : t("homestead.storage.failed"));
     showClaim(player, claim);
@@ -611,7 +612,7 @@ function showMobRules(player, claim) {
     let savedAll = true;
     for (const target of targets) {
       target.mobs = JSON.parse(JSON.stringify(saved));
-      if (!updateClaim(target)) savedAll = false;
+      if (!updateClaim(target, ["mobs"])) savedAll = false;
     }
     player.sendMessage(!savedAll
       ? t("homestead.storage.failed")
@@ -635,8 +636,28 @@ function showCombatRules(player, claim) {
   saveButton(form, () => {
     if (!canManageNow(player, claim) || !isPublicClaim(claim)) return;
     claim.combat = { allowPvp: allowPvp.getData() };
-    player.sendMessage(updateClaim(claim)
+    player.sendMessage(updateClaim(claim, ["combat"])
       ? t("homestead.combat.saved")
+      : t("homestead.storage.failed"));
+    showClaim(player, claim);
+  });
+  backButton(form, () => showClaim(player, claim));
+  show(form);
+}
+
+function showProjectileRules(player, claim) {
+  if (!canManageNow(player, claim)) return;
+  const reflect = bool(reflectsProjectiles(claim));
+  const form = new CustomForm(player, t("homestead.ui.projectiles.title"));
+  form.toggle(t("homestead.ui.projectiles.reflect"), reflect, {
+    description: t("homestead.ui.projectiles.hint"),
+  });
+  form.divider();
+  saveButton(form, () => {
+    if (!canManageNow(player, claim)) return;
+    claim.projectiles = { reflect: reflect.getData() };
+    player.sendMessage(updateClaim(claim, ["projectiles"])
+      ? t("homestead.projectiles.saved")
       : t("homestead.storage.failed"));
     showClaim(player, claim);
   });
@@ -660,7 +681,7 @@ function showMemberRules(player, claim, member) {
         if (stored) {
           stored.overrides = {};
           delete stored.permissions;
-          player.sendMessage(updateClaim(claim)
+          player.sendMessage(updateClaim(claim, ["members"])
             ? t("homestead.rules.saved.for", member.name)
             : t("homestead.storage.failed"));
         }
@@ -713,7 +734,7 @@ function showMemberOverrides(player, claim, member) {
     }
     stored.overrides = saved;
     delete stored.permissions;
-    player.sendMessage(updateClaim(claim)
+    player.sendMessage(updateClaim(claim, ["members"])
       ? t("homestead.rules.saved.for", member.name)
       : t("homestead.storage.failed"));
     showMemberRules(player, claim, member);
@@ -732,7 +753,7 @@ function showMemberGroups(player, claim, member) {
     run: () => {
       if (membership.has(group.id)) {
         stored.groups = (stored.groups ?? []).filter((id) => id !== group.id);
-        player.sendMessage(updateClaim(claim)
+        player.sendMessage(updateClaim(claim, ["members"])
           ? t("homestead.group.left", member.name, group.name)
           : t("homestead.storage.failed"));
         return showMemberGroups(player, claim, member);
@@ -744,7 +765,7 @@ function showMemberGroups(player, claim, member) {
         return showMemberGroups(player, claim, member);
       }
       stored.groups = [...(stored.groups ?? []), group.id];
-      player.sendMessage(updateClaim(claim)
+      player.sendMessage(updateClaim(claim, ["members"])
         ? t("homestead.group.joined", member.name, group.name)
         : t("homestead.storage.failed"));
       showMemberGroups(player, claim, member);
@@ -794,7 +815,7 @@ function showGroup(player, claim, group) {
           }
         }
         setEnabledIn(claim, group.id, !active);
-        player.sendMessage(updateClaim(claim)
+        player.sendMessage(updateClaim(claim, ["disabledGroups"])
           ? t(active ? "homestead.group.disabled" : "homestead.group.enabled", group.name)
           : t("homestead.storage.failed"));
         showGroups(player, claim);
@@ -940,7 +961,7 @@ function showCopyGroup(player, claim) {
         added++;
       }
     }
-    if (!updateClaim(claim)) {
+    if (!updateClaim(claim, ["members"])) {
       player.sendMessage(t("homestead.storage.failed"));
       return showGroups(player, claim);
     }
@@ -1012,7 +1033,7 @@ function confirmGroupRemoval(player, claim, group) {
     {
       label: t("homestead.ui.group.delete"),
       run: () => {
-        player.sendMessage(deleteGroup(claim.ownerId, group.id, claimsOf(claim.ownerId), updateClaim)
+        player.sendMessage(deleteGroup(claim.ownerId, group.id, claimsOf(claim.ownerId), (c) => updateClaim(c, ["members", "disabledGroups"]))
           ? t("homestead.group.deleted", group.name)
           : t("homestead.storage.failed"));
         showClaim(player, claim);

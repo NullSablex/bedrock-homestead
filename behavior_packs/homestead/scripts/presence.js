@@ -215,28 +215,28 @@ function sendBack(player, claim) {
 
 function watchPresence() {
   for (const player of world.getPlayers()) {
-    let here;
     try {
-      here = claimAt(player.dimension.id, player.location);
-    } catch {
-      continue;
-    }
+      watchPlayer(player);
+    } catch { /* left or changed dimension mid-check; next pass sees them */ }
+  }
+}
 
-    if (!here || mayDo(here, player, "enter")) {
-      // Remembered only while they are somewhere they are allowed to be, so it
-      // can never be a position inside the claim they were just refused.
-      const position = {
-        x: player.location.x,
-        y: player.location.y,
-        z: player.location.z,
-        dimension: player.dimension.id,
-      };
-      lastAllowed.set(player.id, position);
-      if (!here) lastOutside.set(player.id, position);
-    } else if (sendBack(player, here)) {
-      tell(player, "homestead.deny.enter");
-    }
+function watchPlayer(player) {
+  const here = claimAt(player.dimension.id, player.location);
 
+  if (!here || mayDo(here, player, "enter")) {
+    // Remembered only while they are somewhere they are allowed to be, so it
+    // can never be a position inside the claim they were just refused.
+    const position = {
+      x: player.location.x,
+      y: player.location.y,
+      z: player.location.z,
+      dimension: player.dimension.id,
+    };
+    lastAllowed.set(player.id, position);
+    if (!here) lastOutside.set(player.id, position);
+  } else if (sendBack(player, here)) {
+    tell(player, "homestead.deny.enter");
   }
 }
 
@@ -293,12 +293,18 @@ export function patrolCreatures() {
     }
 
     for (const entity of entities) {
-      const x = Math.floor(entity.location.x);
-      const z = Math.floor(entity.location.z);
-      const bucket = chunks.get(`${Math.floor(x / 16)},${Math.floor(z / 16)}`);
-      if (!bucket) continue;
-      const claim = bucket.find((candidate) => contains(candidate, x, z));
-      if (claim) pushOut(claim, entity);
+      // One entity that vanished mid-pass must not end the pass for the rest
+      // of the dimension.
+      try {
+        const { location } = entity;
+        const x = Math.floor(location.x);
+        const z = Math.floor(location.z);
+        const bucket = chunks.get(`${Math.floor(x / 16)},${Math.floor(z / 16)}`);
+        if (!bucket) continue;
+        const claim = bucket.find((candidate) =>
+          contains(candidate, x, z) && inHeight(candidate, location.y));
+        if (claim) pushOut(claim, entity, chunks);
+      } catch { /* despawned or unloaded during the pass */ }
     }
   }
 }
@@ -310,7 +316,11 @@ export function patrolCreatures() {
  * to stand: throwing it across the plot would drop it on the far boundary,
  * which is the same problem one claim-width away.
  */
-function pushOut(claim, entity) {
+function inHeight(claim, y) {
+  return claim.heightMode === "full" || (y >= claim.y1 && y <= claim.y2);
+}
+
+function pushOut(claim, entity, chunks) {
   // "enter" and not "spawn": this one is already alive and came from
   // somewhere else, which is exactly the case the two rules separate.
   if (mobAllowed(claim, entity, "enter")) return false;
@@ -319,25 +329,36 @@ function pushOut(claim, entity) {
   const z = Math.floor(entity.location.z);
   if (!contains(claim, x, z)) return false;
 
-  const west = x - claim.x1;
-  const east = claim.x2 - x;
-  const north = z - claim.z1;
-  const south = claim.z2 - z;
-  const nearest = Math.min(west, east, north, south);
+  const { x: ex, y: ey, z: ez } = entity.location;
+  const sides = [
+    { distance: x - claim.x1, to: { x: claim.x1 - 1.5, y: ey, z: ez } },
+    { distance: claim.x2 - x, to: { x: claim.x2 + 1.5, y: ey, z: ez } },
+    { distance: z - claim.z1, to: { x: ex, y: ey, z: claim.z1 - 1.5 } },
+    { distance: claim.z2 - z, to: { x: ex, y: ey, z: claim.z2 + 1.5 } },
+  ].sort((a, b) => a.distance - b.distance);
 
-  const to = { x: entity.location.x, y: entity.location.y, z: entity.location.z };
-  if (nearest === west) to.x = claim.x1 - 1.5;
-  else if (nearest === east) to.x = claim.x2 + 1.5;
-  else if (nearest === north) to.z = claim.z1 - 1.5;
-  else to.z = claim.z2 + 1.5;
+  // A side that lands in a neighbouring claim which also refuses this
+  // creature only moves the problem: the next pass sends it back, forever.
+  const refusedAt = (to) => {
+    const tx = Math.floor(to.x);
+    const tz = Math.floor(to.z);
+    const bucket = chunks?.get(`${Math.floor(tx / 16)},${Math.floor(tz / 16)}`) ?? [];
+    return bucket.some((other) =>
+      other.id !== claim.id && contains(other, tx, tz) && inHeight(other, to.y) &&
+      !mobAllowed(other, entity, "enter"));
+  };
 
-  try {
-    entity.teleport(to, { dimension: entity.dimension });
-    return true;
-  } catch {
-    // Despawned, or the chunk went away underneath it.
-    return false;
+  for (const side of sides) {
+    if (refusedAt(side.to)) continue;
+    try {
+      entity.teleport(side.to, { dimension: entity.dimension });
+      return true;
+    } catch {
+      // Despawned, or the chunk went away underneath it.
+      return false;
+    }
   }
+  return false;
 }
 
 /**

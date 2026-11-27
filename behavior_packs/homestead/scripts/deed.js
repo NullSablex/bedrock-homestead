@@ -3,7 +3,7 @@ import { CONFIG } from "./config.js";
 import { subscribeSafe } from "./safe.js";
 import { isInteractive } from "./blocks.js";
 import { isDeed } from "./items.js";
-import { claimsOf, forgetVisitor, cleanClaimName } from "./claims.js";
+import { claimsOf, cleanClaimName } from "./claims.js";
 import { showMenu } from "./menu.js";
 import { t } from "./msg.js";
 
@@ -196,6 +196,5 @@ export function registerDeed() {
 
   subscribeSafe(world.afterEvents, "playerLeave", (ev) => {
     lastUse.delete(ev.playerId);
-    forgetVisitor(ev.playerId);
   });
 }

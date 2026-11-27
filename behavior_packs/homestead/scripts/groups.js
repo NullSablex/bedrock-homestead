@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server";
+import { load, loadForWrite, save } from "./store.js";
 import { CONFIG } from "./config.js";
 import { ACTIONS } from "./actions.js";
 
@@ -32,28 +32,15 @@ import { ACTIONS } from "./actions.js";
 
 const KEY = "homestead:groups";
 
+const empty = () => ({});
+const valid = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
 function readAll() {
-  try {
-    const raw = world.getDynamicProperty(KEY);
-    if (typeof raw !== "string" || !raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    // Same trade as the claim registry: an unreadable file loses the groups,
-    // refusing to load loses the add-on.
-    console.warn("[Homestead] group library unreadable, starting empty");
-    return {};
-  }
+  return load(KEY, empty, valid);
 }
 
 function writeAll(all) {
-  try {
-    world.setDynamicProperty(KEY, JSON.stringify(all));
-    return true;
-  } catch (e) {
-    console.warn("[Homestead] could not write the group library: " + e);
-    return false;
-  }
+  return save(KEY, all);
 }
 
 /** Every group this owner has defined. */
@@ -99,7 +86,8 @@ export function saveGroup(ownerId, group) {
   const name = cleanGroupName(group.name);
   if (!name) return false;
   const stored = { ...group, name, rules: rulesOf(group) };
-  const all = readAll();
+  const all = loadForWrite(KEY, empty, valid);
+  if (!all) return false;
   const list = Array.isArray(all[ownerId]) ? all[ownerId] : [];
   const index = list.findIndex((g) => g.id === stored.id);
   if (index < 0) list.push(stored);
@@ -150,8 +138,9 @@ export function createGroup(ownerId, name, rules) {
  * longer exists loses whatever it granted without anything saying so, and the
  * owner would be reading a name on a screen that means nothing.
  */
-export function deleteGroup(ownerId, groupId, claims, save) {
-  const all = readAll();
+export function deleteGroup(ownerId, groupId, claims, saveClaim) {
+  const all = loadForWrite(KEY, empty, valid);
+  if (!all) return false;
   const list = Array.isArray(all[ownerId]) ? all[ownerId] : [];
   if (!list.some((group) => group?.id === groupId)) return false;
   all[ownerId] = list.filter((g) => g.id !== groupId);
@@ -170,7 +159,7 @@ export function deleteGroup(ownerId, groupId, claims, save) {
       claim.disabledGroups = claim.disabledGroups.filter((id) => id !== groupId);
       touched = true;
     }
-    if (touched && !save(claim)) savedAll = false;
+    if (touched && !saveClaim(claim)) savedAll = false;
   }
   return savedAll;
 }

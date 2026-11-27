@@ -1,0 +1,73 @@
+# Documentation site, built with Zensical (https://zensical.org).
+#
+#   pip install --require-hashes -r requirements-docs.txt
+#   zensical serve            # live preview
+#   zensical build --strict   # what CI runs; warnings fail the build
+
+[project]
+site_name = "Homestead"
+site_description = "Homestead land protection for Minecraft Bedrock 1.26+"
+site_url = "https://nullsablex.github.io/bedrock-homestead/"
+repo_url = "https://github.com/NullSablex/bedrock-homestead"
+repo_name = "NullSablex/bedrock-homestead"
+edit_uri = "edit/master/docs/"
+copyright = "Copyright &copy; NullSablex - MPL-2.0"
+
+# Notes for contributors that live next to what they describe, but are not
+# pages of the site.
+exclude_docs = "img/README.md"
+
+nav = [
+  { "Home" = "index.md" },
+  { "For players" = [
+    { "What it does" = "features.md" },
+    { "Installation" = "installation.md" },
+    { "Using the deed" = "tool.md" },
+  ] },
+  { "For server owners" = [
+    { "Configuration" = "configuration.md" },
+    { "Languages" = "languages.md" },
+  ] },
+  { "For developers" = [
+    { "Architecture" = "architecture.md" },
+    { "Development" = "development.md" },
+  ] },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "navigation.sections",
+  "navigation.top",
+  "content.code.copy",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "green"
+accent = "amber"
+toggle.icon = "lucide/moon"
+toggle.name = "Dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "green"
+accent = "amber"
+toggle.icon = "lucide/sun"
+toggle.name = "Light mode"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/NullSablex"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+tables = {}
+toc.permalink = true
+pymdownx.details = {}
+pymdownx.superfences = {}
+pymdownx.highlight.anchor_linenums = true

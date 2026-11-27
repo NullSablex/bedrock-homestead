@@ -23,9 +23,3 @@ updates:
     labels:
       - dependencies
       - documentation
-    ignore:
-      # MkDocs 2.0 removes the plugin system and rewrites theming, with no
-      # migration path, and Material for MkDocs does not run on it. A major
-      # bump here would not be an update, it would be a rewrite.
-      - dependency-name: mkdocs
-        update-types: [version-update:semver-major]

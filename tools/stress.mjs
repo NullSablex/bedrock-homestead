@@ -94,6 +94,11 @@ const projectiles = await load("projectiles.js");
 const combat = await load("combat.js");
 const publicPresets = await load("public_presets.js");
 const ACTIONS = [...actionsModule.ACTIONS];
+const setAreas = (text) => {
+  for (const key of [...properties.keys()]) if (key.startsWith("homestead:areas")) properties.delete(key);
+  properties.set("homestead:areas", text);
+};
+const storedAreas = () => JSON.stringify([...properties].filter(([key]) => key.startsWith("homestead:areas")));
 let checks = 0;
 const check = (condition, message) => {
   checks++;
@@ -179,46 +184,26 @@ function player(id, admin = false) {
   };
 }
 
-// Guest, owner, admin and visitor precedence for all 64 flag sets.
+// Guest, owner and admin precedence for all 64 flag sets.
 for (let mask = 0; mask < 1 << ACTIONS.length; mask++) {
   const claim = { ownerId: "owner", guests: maskFlags(mask), members: [] };
   for (let index = 0; index < ACTIONS.length; index++) {
     const action = ACTIONS[index];
-    check(permissions.may(claim, player("guest"), action, false) === Boolean(mask & (1 << index)), "guest flag mismatch");
-    check(permissions.may(claim, player("owner"), action, false), "owner denied");
-    check(permissions.may(claim, player("admin", true), action, false), "admin denied");
-    check(
-      permissions.may(claim, player("owner", true), action, true) === Boolean(mask & (1 << index)),
-      "visitor preview did not match public permissions"
-    );
+    check(permissions.may(claim, player("guest"), action) === Boolean(mask & (1 << index)), "guest flag mismatch");
+    check(permissions.may(claim, player("owner"), action), "owner denied");
+    check(permissions.may(claim, player("admin", true), action), "admin denied");
   }
 }
-
-// Visitor preview is scoped to the tester's own claims. It must not erase a
-// real membership or operator access in somebody else's claim.
-const previewingOwner = player("owner", true);
-claims.setVisitor(previewingOwner, true);
-const ownClosedClaim = { ownerId: "owner", guests: maskFlags(0), members: [] };
-const otherClaim = {
-  ownerId: "other",
-  guests: maskFlags(0),
-  members: [{ id: "owner", overrides: { enter: true } }],
-};
-check(!claims.mayDo(ownClosedClaim, previewingOwner, "enter"), "visitor preview retained owner bypass");
-check(claims.mayDo(otherClaim, previewingOwner, "enter"), "visitor preview erased access to another claim");
-claims.setVisitor(previewingOwner, false);
-check(!permissions.may(undefined, player("admin", true), "unknown", false), "unknown action was allowed");
+check(!permissions.may(undefined, player("admin", true), "unknown"), "unknown action was allowed");
 check(!permissions.may(
   { ownerId: "owner", guests: maskFlags(0), members: [] },
   { ...player("custom"), playerPermissionLevel: 3, commandPermissionLevel: 4 },
-  "place",
-  false
+  "place"
 ), "custom permissions were treated as operator");
 check(permissions.may(
   { ownerId: "owner", guests: maskFlags(0), members: [] },
   { ...player("command-op"), commandPermissionLevel: 1 },
-  "place",
-  false
+  "place"
 ), "operator command permission fallback was ignored");
 const throwingOperator = {
   ...player("throwing-op"),
@@ -230,8 +215,7 @@ Object.defineProperty(throwingOperator, "playerPermissionLevel", {
 check(permissions.may(
   { ownerId: "owner", guests: maskFlags(0), members: [] },
   throwingOperator,
-  "place",
-  false
+  "place"
 ), "throwing player permission blocked a native operator");
 
 // All 3^6 override combinations: inherit, allow, deny.
@@ -325,20 +309,20 @@ const editedFirst = claims.reshapeClaim(owner, firstClaim.claim.id, "minecraft:o
 });
 check(editedFirst.ok, "valid boundary edit was rejected");
 check(editedFirst.claim.name === firstClaim.claim.name, "boundary edit changed claim metadata");
-const beforeRejectedEdit = properties.get("homestead:areas");
+const beforeRejectedEdit = storedAreas();
 check(!claims.reshapeClaim(owner, firstClaim.claim.id, "minecraft:overworld", {
   x1: 0, x2: 5, z1: 0, z2: 4,
 }).ok, "boundary edit overlapped an adjacent own claim");
-check(properties.get("homestead:areas") === beforeRejectedEdit, "rejected overlap changed the registry");
+check(storedAreas() === beforeRejectedEdit, "rejected overlap changed the registry");
 check(!claims.reshapeClaim(other, firstClaim.claim.id, "minecraft:overworld", {
   x1: 0, x2: 4, z1: 0, z2: 4,
 }).ok, "non-owner reshaped another player's claim");
-check(properties.get("homestead:areas") === beforeRejectedEdit, "denied edit changed the registry");
+check(storedAreas() === beforeRejectedEdit, "denied edit changed the registry");
 check(settings.saveProtectionLimits(3, 55).ok, "edit budget test limit was rejected");
 check(!claims.reshapeClaim(owner, firstClaim.claim.id, "minecraft:overworld", {
   x1: 0, x2: 4, z1: 0, z2: 6,
 }).ok, "boundary edit bypassed the owner's block budget");
-check(properties.get("homestead:areas") === beforeRejectedEdit, "over-budget edit changed the registry");
+check(storedAreas() === beforeRejectedEdit, "over-budget edit changed the registry");
 check(settings.saveProtectionLimits(3, 40).ok, "lowered edit budget test limit was rejected");
 check(claims.reshapeClaim(owner, firstClaim.claim.id, "minecraft:overworld", {
   x1: 0, x2: 4, z1: 0, z2: 4,
@@ -418,6 +402,21 @@ check(selection.markCorner(openPlayer, { x: 0, y: 10, z: 0 }).marked, "marker re
 check(openDimension.getBlock({ x: 0, y: 11, z: 0 }).typeId === config.CONFIG.selection.marker.postBlock, "marker block missing");
 check(openDimension.entities[0]?.nameTag === "§ePonto 1", "marker label missing or misnumbered");
 check(openDimension.entities[0]?.nameplateRenderDistance === 96, "marker label render distance missing");
+{
+  const recorded = () => {
+    const head = properties.get("homestead:markers:head");
+    if (!head) return [];
+    const [generation, parts] = head.split(":").map(Number);
+    let text = "";
+    for (let i = 0; i < parts; i++) text += properties.get(`homestead:markers:${generation}:${i}`);
+    return JSON.parse(text);
+  };
+  check(recorded().some((m) => m.at.x === 0 && m.at.y === 11 && m.at.z === 0),
+    "placed marker was not recorded for cleanup after a reload");
+  selection.clearSelection(openPlayer);
+  check(recorded().length === 0, "removed marker stayed in the cleanup record");
+  check(openDimension.getBlock({ x: 0, y: 11, z: 0 }).typeId === "minecraft:air", "cleared marker stayed in the world");
+}
 check(openDimension.entities[0]?.nameplateDepthTested === false, "marker label is hidden by depth testing");
 selection.clearSelection(openPlayer);
 check(openDimension.getBlock({ x: 0, y: 11, z: 0 }).typeId === "minecraft:air", "marker cleanup did not restore air");
@@ -438,7 +437,7 @@ const editable = {
   dimension: editDimension.id, x1: 0, x2: 4, z1: 0, z2: 4,
   heightMode: "full", members: [], guests: maskFlags(0),
 };
-properties.set("homestead:areas", JSON.stringify([editable]));
+setAreas(JSON.stringify([editable]));
 world.getDimension = () => editDimension;
 check(selection.loadClaimSelection(editPlayer, editable), "existing boundary did not load for editing");
 check(selection.editingClaimId(editPlayer) === editable.id, "edit target was not attached to selection");
@@ -462,7 +461,7 @@ const editablePolygon = {
   id: "editable-polygon",
   points: polygonPoints,
 };
-properties.set("homestead:areas", JSON.stringify([editablePolygon]));
+setAreas(JSON.stringify([editablePolygon]));
 check(selection.loadClaimSelection(editPlayer, editablePolygon), "polygon boundary did not load for editing");
 selection.clearCorner(editPlayer, 1);
 const invalidVertex = selection.markCorner(editPlayer, { x: 1, y: 10, z: 4 });
@@ -477,7 +476,7 @@ check(
 );
 selection.clearSelection(editPlayer);
 
-properties.set("homestead:areas", JSON.stringify([{
+setAreas(JSON.stringify([{
   id: "protected", ownerId: "owner", ownerName: "Owner",
   dimension: "minecraft:overworld", x1: 0, x2: 4, z1: 0, z2: 4,
   heightMode: "full", members: [], guests: maskFlags(0),
@@ -493,7 +492,7 @@ check(deniedDimension.getBlock({ x: 0, y: 11, z: 0 }).typeId === "minecraft:air"
 
 // Creature enforcement follows loaded entities, not the owner's proximity.
 // Negative coordinates also exercise floor-based Bedrock chunk indexing.
-properties.set("homestead:areas", JSON.stringify([{
+setAreas(JSON.stringify([{
   id: "remote", ownerId: "owner", ownerName: "Owner",
   dimension: "minecraft:overworld", x1: -20, x2: -16, z1: -20, z2: -16,
   heightMode: "full", members: [], guests: maskFlags(0),
@@ -517,6 +516,21 @@ world.getDimension = (id) => {
 presence.patrolCreatures();
 check(remoteMonster.teleported === true, "loaded creature was ignored without a nearby owner");
 check(remoteMonster.location.x === -21.5, "loaded creature was not moved through the nearest boundary");
+
+// A neighbour that refuses the same creature is not an exit: the next pass
+// would send it straight back.
+setAreas(JSON.stringify([
+  { id: "west", ownerId: "owner", dimension: "minecraft:overworld", x1: 0, x2: 9, z1: 0, z2: 20,
+    heightMode: "full", members: [], guests: maskFlags(0), mobs: { hostile: { spawn: false, enter: false } } },
+  { id: "east", ownerId: "owner", dimension: "minecraft:overworld", x1: 10, x2: 30, z1: 0, z2: 20,
+    heightMode: "full", members: [], guests: maskFlags(0), mobs: { hostile: { spawn: false, enter: false } } },
+]));
+remoteDimension.entities.length = 0;
+const flushMonster = { ...remoteMonster, location: { x: 8.5, y: 64, z: 9.5 }, teleported: false };
+remoteDimension.entities.push(flushMonster);
+presence.patrolCreatures();
+check(flushMonster.teleported && !(flushMonster.location.x >= 10 && flushMonster.location.x <= 31),
+  "creature was pushed into a neighbouring claim that refuses it");
 
 // Public claims belong to the server identity, require a native operator and
 // do not consume any individual player's count or block budget.
@@ -566,6 +580,40 @@ check(!claims.createClaim(
   publicOperator, "minecraft:overworld", { x1: 5, x2: 9, z1: 0, z2: 4 }, "Too close", { public: true }
 ).ok, "public claim bypassed another player's safety gap");
 
+// An unreadable registry is locked, never replaced by an empty one.
+properties.clear();
+setAreas("{not json");
+check(!claims.createClaim(player("lock"), "minecraft:overworld", { x1: 0, x2: 4, z1: 0, z2: 4 }, "L").ok,
+  "claim created over an unreadable registry");
+check(properties.get("homestead:areas") === "{not json", "unreadable registry was overwritten");
+check(claims.registryLocked(), "unreadable registry was not reported");
+
+// A registry past the single-property cap is split and read back whole.
+properties.clear();
+const many = Array.from({ length: 400 }, (_, i) => ({
+  id: "c" + i, ownerId: "o", name: "Area " + i, dimension: "minecraft:overworld",
+  x1: i * 20, x2: i * 20 + 4, z1: 0, z2: 4, heightMode: "full", y1: -64, y2: 320,
+  members: [], guests: {}, mobs: {},
+}));
+setAreas(JSON.stringify(many));
+check(claims.removeClaim("c0"), "large registry could not be written");
+check([...properties.values()].every((v) => typeof v !== "string" || v.length <= 32767),
+  "a stored part exceeds the dynamic property cap");
+check(claims.allClaims().length === 399 && !claims.registryLocked(), "split registry did not read back");
+check(claims.removeClaim("c1") && claims.allClaims().length === 398, "second split write failed");
+
+// A screen writes only what it changed: a stale record must not undo a
+// boundary redrawn in the meantime.
+const stale = { ...claims.allClaims().find((c) => c.id === "c2") };
+const fresh = { ...stale, x2: stale.x2 + 1 };
+const list = JSON.parse(JSON.stringify(claims.allClaims())).map((c) => c.id === "c2" ? fresh : c);
+setAreas(JSON.stringify(list));
+stale.combat = { allowPvp: true };
+check(claims.updateClaim(stale, ["combat"]), "field update failed");
+const merged = claims.allClaims().find((c) => c.id === "c2");
+check(merged.x2 === fresh.x2 && merged.combat.allowPvp === true, "field update restored a stale boundary");
+properties.clear();
+
 // Incoming projectiles preserve speed and vertical motion while reflecting
 // the horizontal component at the crossed wall.
 const reflected = projectiles.reflectIncoming(
@@ -586,6 +634,39 @@ check(projectiles.reflectIncoming(
   { x1: 0, x2: 4, z1: 0, z2: 4 },
   { x: 1, y: 65, z: 1 }, { x: 2, y: 65, z: 2 }, { x: 1, y: 0, z: 1 }
 ) === undefined, "projectile born inside was reflected");
+
+// The patrol looks ahead over every claim: the end point alone missed a
+// projectile that crossed a narrow claim in one tick, and the one it was
+// about to enter.
+const area = { dimension: "minecraft:overworld", heightMode: "full", x1: 0, x2: 4, z1: 0, z2: 4 };
+const ow = "minecraft:overworld";
+const tunnel = projectiles.firstEntry(
+  [area], ow, { x: -1, y: 65, z: 2 }, { x: 6, y: 65, z: 2 }, { x: 7, y: 0, z: 0 }
+);
+check(tunnel?.claim === area && tunnel.velocity.x === -7, "patrol let a projectile tunnel through a claim");
+check(projectiles.firstEntry(
+  [area], ow, { x: -3, y: 65, z: 2 }, { x: -1, y: 65, z: 2 }, { x: 2, y: 0, z: 0 }
+) === undefined, "projectile that stops short of the border was reflected");
+check(projectiles.firstEntry(
+  [area], "minecraft:nether", { x: -1, y: 65, z: 2 }, { x: 1, y: 65, z: 2 }, { x: 2, y: 0, z: 0 }
+) === undefined, "projectile reflected by a claim in another dimension");
+const near = { ...area, x1: 10, x2: 14 };
+check(projectiles.firstEntry(
+  [near, area], ow, { x: 20, y: 65, z: 2 }, { x: -1, y: 65, z: 2 }, { x: -21, y: 0, z: 0 }
+)?.claim === near, "projectile reflected by a farther claim instead of the first one entered");
+const off = { ...area, projectiles: { reflect: false } };
+check(!projectiles.reflectsProjectiles(off) && projectiles.reflectsProjectiles(area),
+  "ricochet default or switch is wrong");
+check(projectiles.firstEntry(
+  [off], ow, { x: -1, y: 65, z: 2 }, { x: 1, y: 65, z: 2 }, { x: 2, y: 0, z: 0 }
+) === undefined, "claim with ricochet off still reflected");
+check(projectiles.firstEntry(
+  [area], ow, { x: -1, y: 65, z: 2 }, { x: 1, y: 65, z: 2 }, { x: 2, y: 0, z: 0 }, () => true
+) === undefined, "projectile of a player who may build there was reflected");
+const low = { ...area, heightMode: "limited", y1: 0, y2: 10 };
+check(projectiles.firstEntry(
+  [low], ow, { x: -1, y: 65, z: 2 }, { x: 1, y: 65, z: 2 }, { x: 2, y: 0, z: 0 }
+) === undefined, "projectile above a height-limited claim was reflected");
 
 // No-PvP is exclusive to public claims and recognizes both direct attacks and
 // the player who owns a damaging projectile.

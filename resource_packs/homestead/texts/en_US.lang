@@ -36,6 +36,8 @@ homestead.untrust.absent=§8[§aHomestead§8] §7%s was not trusted.
 homestead.untrust.done=§8[§aHomestead§8] §7§f%s§7 can no longer build there.
 homestead.deed.received=§8[§aHomestead§8] §7You received the deed. Use it to open the claim menu.
 homestead.storage.failed=§8[§aHomestead§8] §7§cCould not save. No change was confirmed; check the content log.
+homestead.storage.locked=§8[§aHomestead§8] §7§cArea data could not be read. Nothing will be saved so it is not erased; tell an operator.
+homestead.ui.status.locked=§cArea data unreadable: saving is locked to preserve it. See the server log.
 homestead.manage.denied=§8[§aHomestead§8] §7§cYou no longer have permission to manage this claim.
 
 ## Protection --------------------------------------------------------------
@@ -149,14 +151,6 @@ homestead.ui.status.ok=§aProtection active
 homestead.ui.status.failed=§cProtection incomplete (%s failures)
 homestead.ui.status.claims=%s claims loaded
 homestead.ui.status.compatible=Stable compatibility mode is active. Experimental features are not required.
-homestead.ui.visitor.header=Test the protection
-homestead.ui.visitor.body.off=Visitor mode: off. Test your claims as another player.
-homestead.ui.visitor.body.on=Visitor mode: on. Your claims treat you as another player.
-homestead.ui.visitor.on=Test as a visitor
-homestead.ui.visitor.off=Stop testing as a visitor
-homestead.ui.visitor.warn=§eYou are being treated as a stranger in your own claims.
-homestead.visitor.on=§8[§aHomestead§8] §7§eVisitor test on: your own claims now apply their public visitor permissions to you. Open the menu to turn it off.
-homestead.visitor.off=§8[§aHomestead§8] §7§aVisitor test off. Your claims answer to you again.
 homestead.ui.trust.title=Trust a player
 homestead.ui.untrust.title=Revoke access
 homestead.ui.nobody.online=§8[§aHomestead§8] §7§cThere is nobody else online to trust.
@@ -188,6 +182,14 @@ homestead.ui.combat.pvp.allowed=PvP: allowed
 homestead.ui.combat.pvp.blocked=PvP: blocked
 homestead.ui.combat.pvp.hint=When off, players cannot damage one another in this public claim.
 homestead.combat.saved=§8[§aHomestead§8] §7§aCombat rule saved.
+
+## Projectiles --------------------------------------------------------------
+homestead.ui.projectiles.title=Projectiles
+homestead.ui.projectiles.reflect=Ricochet projectiles from outside
+homestead.ui.projectiles.on=Ricochet: on
+homestead.ui.projectiles.off=Ricochet: off
+homestead.ui.projectiles.hint=When on, arrows and thrown items from outside bounce back at the border. Players who may build here are never reflected.
+homestead.projectiles.saved=§8[§aHomestead§8] §7§aProjectile rule saved.
 
 ## Credits -----------------------------------------------------------------
 homestead.credits.title=About

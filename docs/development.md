@@ -25,13 +25,14 @@ Install the locked toolchain and treat warnings as failures:
 
 ```bash
 python -m pip install --require-hashes -r requirements-docs.txt
-mkdocs serve
-mkdocs build --strict
+zensical serve
+zensical build --strict
 ```
 
 When a direct documentation dependency changes, update
 `requirements-docs.in` and regenerate `requirements-docs.txt` with
-`pip-compile --generate-hashes requirements-docs.in`.
+`pip-compile --generate-hashes requirements-docs.in`. The site configuration
+lives in `zensical.toml`.
 
 ## Bedrock API contract
 
